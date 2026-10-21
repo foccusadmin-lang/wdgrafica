@@ -38,7 +38,7 @@
   /* topo */
   .topbar{background:var(--k);color:#fff;font-size:13px;text-align:center;padding:7px 16px}
   .topbar b{color:var(--y)}
-  header{background:#fff;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  header{background:#fff;position:sticky;top:0;z-index:57;box-shadow:0 2px 10px rgba(0,0,0,.06)}
   .head{display:flex;align-items:center;gap:20px;padding:12px 16px}
   .brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
   .brand img{width:58px;height:58px;border-radius:50%}
@@ -134,8 +134,50 @@
   .modal .x{position:absolute;top:10px;right:12px;border:0;background:none;font-size:26px;cursor:pointer;color:var(--muted)}
 
   /* navegação */
-  nav.cats a{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;white-space:nowrap}
-  nav.cats a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  nav.cats a{padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;border-radius:8px}
+  nav.cats a:hover{background:var(--bg)}
+  nav.cats .todos{border:0;background:#f3eefc;color:#5b1fa8;border-radius:8px;padding:7px 14px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;white-space:nowrap}
+  .mega{display:none;position:absolute;left:0;right:0;top:100%;z-index:58}
+  .mega.open{display:block}
+  .mega-hd{display:none}
+  .mega-in{max-width:1200px;margin:0 auto;background:#fff;border-radius:0 0 16px 16px;box-shadow:0 20px 40px rgba(0,0,0,.18);display:grid;grid-template-columns:260px 1fr;max-height:70vh;overflow:hidden;border-top:3px solid #6b21a8}
+  .mega-deps{background:#f7f7f9;overflow:auto;padding:8px 0}
+  .mega-deps button{display:flex;justify-content:space-between;width:100%;border:0;background:none;padding:10px 18px;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+  .mega-deps button.on,.mega-deps button:hover{background:#ece4fb;color:#5b1fa8;font-weight:700}
+  .mega-grupos{overflow:auto;padding:18px 26px}
+  .mg-dep{display:inline-block;font-weight:700;color:#5b1fa8;margin-bottom:12px;font-size:14px}
+  .mg-cols{columns:2 260px;column-gap:30px}
+  .mg{break-inside:avoid;margin-bottom:16px}
+  .mg a{display:block;font-size:14px;padding:3px 0;color:#333}
+  .mg a:hover{color:#5b1fa8}
+  .mg .mg-t{font-weight:800;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:5px}
+  .carrossel{position:relative;height:300px;border-radius:18px;overflow:hidden;margin-top:18px}
+  .slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 50px;color:#fff;opacity:0;transition:opacity .6s;pointer-events:none}
+  .slide.on{opacity:1;pointer-events:auto}
+  .slide h2{font-size:40px;font-weight:800;line-height:1.05}
+  .slide p{font-size:18px;margin:10px 0 18px;opacity:.9;max-width:420px}
+  .slide img{height:250px;width:250px;object-fit:cover;border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:6px}
+  .dots button{width:26px;height:4px;border:0;border-radius:4px;background:rgba(255,255,255,.45);cursor:pointer}
+  .dots button.on{background:#fff}
+  .circulos{display:flex;gap:18px;overflow-x:auto;padding:22px 2px 6px;scrollbar-width:thin}
+  .circulos a{flex:0 0 96px;text-align:center;font-size:12px;font-weight:600}
+  .circulos span{display:block;width:84px;height:84px;margin:0 auto 6px;border-radius:22px;background:var(--y);overflow:hidden;padding:6px}
+  .circulos img{width:100%;height:100%;object-fit:cover;border-radius:16px}
+  .subcats{display:flex;gap:8px;flex-wrap:wrap;margin:-6px 0 18px}
+  .subcats a{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600}
+  .subcats a:hover{border-color:#6b21a8;color:#5b1fa8}
+  .opc-bts.cards button{padding:0;width:122px;overflow:hidden;display:flex;flex-direction:column}
+  .opc-bts.cards i{display:grid;place-items:center;height:78px;background:#f3f3f5}
+  .opc-bts.cards i img{width:100%;height:100%;object-fit:cover}
+  .opc-bts.cards small{padding:6px 4px;font-size:11.5px;line-height:1.2}
+  .fig-cor{width:66px;height:34px}
+  .fig-fmt{width:56px;height:56px}
+  .gabaritos{display:flex;gap:14px;flex-wrap:wrap}
+  .gabaritos a{text-align:center;font-size:11px;color:#555}
+  .gabaritos b{display:grid;place-items:center;width:52px;height:52px;border:2px solid var(--ink);border-radius:12px;font-size:15px;color:var(--ink);margin-bottom:4px}
+  .gabaritos a:hover b{border-color:#6b21a8;color:#6b21a8}
+  nav.cats a.on{background:var(--ink);color:#fff}
   .crumbs{font-size:13px;color:var(--muted);padding:16px 0 10px}
   .crumbs a:hover{color:var(--ink)}
   .ver{font-weight:700;color:var(--gold-dark);font-size:14px}
@@ -217,7 +259,7 @@
   .specs th{width:42%;font-weight:700}
   .ajuda{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
   .btn-light{background:#fff;border:1.5px solid var(--ink);color:var(--ink);padding:10px 18px}
-  .cep{display:flex;flex:1;min-width:220px}
+  .cep{display:flex;max-width:360px}
   .cep input{flex:1;border:1px solid var(--line);border-radius:10px 0 0 10px;padding:11px;font:inherit;font-size:14px}
   .cep button{border:0;background:#6b21a8;color:#fff;border-radius:0 10px 10px 0;padding:0 14px;font:inherit;font-weight:700;cursor:pointer}
   .buybar{position:fixed;left:0;right:0;bottom:0;background:#fff;box-shadow:0 -6px 24px rgba(0,0,0,.12);z-index:30}
@@ -260,6 +302,21 @@
     .galeria{position:static;max-width:520px;margin:0 auto;width:100%}
   }
   @media (max-width:860px){
+    .mega{position:fixed;inset:0;top:0;z-index:66;background:#fff}
+    .mega-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+    .mega-hd b{flex:1}
+    .mega-hd .x{border:0;background:none;font-size:28px;cursor:pointer}
+    .mega-hd .voltar{display:none;border:0;background:none;font:inherit;font-weight:700;color:#5b1fa8;cursor:pointer}
+    .mega.nivel2 .voltar{display:block}
+    .mega-in{display:block;max-height:none;height:calc(100% - 60px);border:0;border-radius:0;box-shadow:none}
+    .mega-deps{height:100%;background:#fff}
+    .mega-grupos{display:none;height:100%}
+    .mega.nivel2 .mega-deps{display:none}
+    .mega.nivel2 .mega-grupos{display:block}
+    .carrossel{height:auto;min-height:230px}
+    .slide{padding:24px;flex-direction:column;justify-content:center;text-align:center}
+    .slide img{display:none}
+    .slide h2{font-size:28px}
     .head{flex-wrap:wrap}
     .search{order:3;flex-basis:100%}
     .wa-link{display:none}
@@ -326,6 +383,10 @@
     </div>
   </div>
   <nav class="cats"><div class="wrap" id="cats"></div></nav>
+  <div class="mega" id="mega">
+    <div class="mega-hd"><b>Todos os Produtos</b><button onclick="$('mega').classList.remove('nivel2')" class="voltar">‹ Voltar</button><button onclick="fecharMenu()" class="x">×</button></div>
+    <div class="mega-in"><div class="mega-deps" id="megaDeps"></div><div class="mega-grupos" id="megaGrupos"></div></div>
+  </div>
   <div class="cmyk"></div>
 </header>
 
@@ -366,7 +427,7 @@
 </div>
 
 <!-- carrinho -->
-<div class="shade" id="shade" onclick="toggleCart(false)"></div>
+<div class="shade" id="shade" onclick="toggleCart(false);fecharMenu()"></div>
 <aside class="drawer" id="drawer">
   <div class="hd"><h3>🛒 Seu carrinho</h3><button class="x" style="border:0;background:none;font-size:26px;cursor:pointer" onclick="toggleCart(false)">×</button></div>
   <div class="items" id="items"></div>

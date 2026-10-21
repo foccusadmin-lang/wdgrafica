@@ -84,7 +84,7 @@ const data = t => t?.seconds ? new Date(t.seconds * 1000).toLocaleString('pt-BR'
 const STATUS = { novo:'Recebido', producao:'Em produção', pronto:'Pronto / enviado', entregue:'Entregue', cancelado:'Cancelado' };
 let tt; const toast = t => { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 2000); };
 
-let aba = 'pedidos', pedidos = [], CAT = null, ajustes = {}, clientes = [], filtro = { status:'', q:'' }, filtroProd = '';
+let aba = 'pedidos', pedidos = [], CAT = null, FAM = {}, ajustes = {}, clientes = [], filtro = { status:'', q:'' }, filtroProd = '';
 const P = v => Math.round(v * (CAT?.mult || 2.5) * 100) / 100;
 
 if (!WD.configurado) {
@@ -110,7 +110,10 @@ if (!WD.configurado) {
 async function carregar() {
   app.innerHTML = '<div class="center"><p class="muted">Carregando dados...</p></div>';
   try {
-    [pedidos, CAT, ajustes, clientes] = await Promise.all([WD.todosPedidos(), fetch('data/catalogo.json', { cache: 'no-cache' }).then(r => r.json()), WD.lerAjustes(), WD.todosClientes()]);
+    [pedidos, CAT, ajustes, clientes] = await Promise.all([WD.todosPedidos(), fetch('data/indice.json', { cache: 'no-cache' }).then(r => r.json()), WD.lerAjustes(), WD.todosClientes()]);
+    // dados completos só dos produtos que aparecem nos pedidos (para conferir preços)
+    const usados = [...new Set(pedidos.flatMap(p => (p.itens || []).map(i => i.fam)).filter(s => s && CAT.fams[s]))];
+    await Promise.all(usados.map(async s => { FAM[s] = await fetch('data/p/' + s + '.json').then(r => r.ok ? r.json() : null).catch(() => null); }));
     render();
   } catch (e) {
     app.innerHTML = `<div class="center box"><h2>Erro ao carregar</h2><p class="muted">${esc(e.message)}</p><p class="muted" style="margin-top:8px">Confira se as regras do Firestore (firestore.rules) foram publicadas.</p></div>`;
@@ -141,7 +144,7 @@ function render() {
 /* ---------- PEDIDOS ---------- */
 // O preço é calculado no navegador do cliente: confere com o catálogo atual para detectar valores alterados.
 function precoCatalogo(i) {
-  const f = CAT.fams[i.fam]; if (!f) return null;
+  const f = FAM[i.fam]; if (!f) return null;
   let q = null, v = null;
   for (const x of f.vars) { const y = x.q.find(z => z[2] === i.id); if (y) { q = y; v = x; break; } }
   if (!q) return null;
@@ -203,26 +206,27 @@ function renderPedidos() {
 /* ---------- PRODUTOS (ajustes sobre o catálogo) ---------- */
 function renderProdutos() {
   const t = filtroProd.toLowerCase();
-  const nVar = Object.values(CAT.fams).reduce((a, f) => a + f.vars.length, 0);
-  const nPreco = Object.values(CAT.fams).reduce((a, f) => a + f.vars.reduce((b, v) => b + v.q.length, 0), 0);
+  const nomeDe = s => ajustes[s]?.nome || CAT.fams[s].n;
+  const nComb = Object.values(CAT.fams).reduce((a, f) => a + f.c, 0);
+  const vistos = new Set();
   $('conteudo').innerHTML = `
-    <div class="box"><b>Catálogo:</b> ${Object.keys(CAT.fams).length} produtos, ${nVar} combinações e ${nPreco} preços
+    <div class="box"><b>Catálogo:</b> ${Object.keys(CAT.fams).length} produtos e ${nComb} combinações
       · atualizado em ${new Date(CAT.geradoEm).toLocaleString('pt-BR')}<br>
       <span class="muted">Preço no site = preço de referência × ${String(CAT.mult).replace('.', ',')}. Aqui você pode ocultar, renomear ou destacar produtos.</span></div>
     <div class="filters"><input id="fP" placeholder="Buscar produto" value="${esc(filtroProd)}"></div>
-    ${CAT.cats.map(c => {
-      const fams = c.fams.filter(s => !t || (ajustes[s]?.nome || CAT.fams[s].nome).toLowerCase().includes(t));
+    ${CAT.menu.map(d => {
+      const fams = (CAT.listas[d.s]?.f || []).filter(s => !vistos.has(s) && (!t || nomeDe(s).toLowerCase().includes(t)));
+      fams.forEach(s => vistos.add(s));
       if (!fams.length) return '';
-      return `<h3 style="margin:18px 0 8px">${esc(c.nome)}</h3>` + fams.map(s => {
+      return `<h3 style="margin:18px 0 8px">${esc(d.n)} <span class="muted">(${fams.length})</span></h3>` + fams.map(s => {
         const f = CAT.fams[s], a = ajustes[s] || {};
-        const min = Math.min(...f.vars.flatMap(v => v.q.map(q => q[1])));
         return `<div class="box prod" data-slug="${esc(s)}">
-          <img src="${esc(f.img)}" alt="">
+          <img src="${esc(f.img || f.imgAlt || 'img/sem-foto.webp')}" alt="" loading="lazy">
           <div>
             <div class="fields">
-              <label class="wide">Nome no site<input data-f="nome" value="${esc(a.nome || f.nome)}" placeholder="${esc(f.nome)}"></label>
+              <label class="wide">Nome no site<input data-f="nome" value="${esc(nomeDe(s))}" placeholder="${esc(f.n)}"></label>
             </div>
-            <div class="muted" style="margin-top:6px">${f.vars.length} combinações · a partir de ${brl(P(min))}</div>
+            <div class="muted" style="margin-top:6px">${f.c} combinações · a partir de ${brl(P(f.p[1]))} / ${f.p[0]} un${f.img ? '' : ' · <b>sem foto própria</b>'}</div>
             <div class="row-act">
               <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="ativo" ${a.ativo !== false ? 'checked' : ''} style="width:auto"> Visível no site</label>
               <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="destaque" ${a.destaque ? 'checked' : ''} style="width:auto"> Selo "Mais vendido"</label>
@@ -237,7 +241,7 @@ function renderProdutos() {
   document.querySelectorAll('[data-save]').forEach(b => b.onclick = () => salvarAjuste(b.closest('[data-slug]')));
 }
 async function salvarAjuste(box) {
-  const s = box.dataset.slug, f = CAT.fams[s];
+  const s = box.dataset.slug, f = { nome: CAT.fams[s].n };
   const v = k => box.querySelector(`[data-f="${k}"]`);
   const nome = v('nome').value.trim();
   const dados = { ativo: v('ativo').checked, destaque: v('destaque').checked, nome: nome && nome !== f.nome ? nome : '' };

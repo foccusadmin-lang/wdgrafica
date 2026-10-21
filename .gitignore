@@ -6,3 +6,5 @@ firebase-debug.log
 Thumbs.db
 ferramentas/cache/
 ferramentas/node_modules/
+ferramentas/coleta-tudo.log
+ferramentas/package-lock.json
