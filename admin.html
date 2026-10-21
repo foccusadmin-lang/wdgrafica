@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel ADM | Grupo WD</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="img/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1d1d1f">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#c9a227;--gold-dark:#a5811a;--ink:#1d1d1f;--muted:#6b6b70;--bg:#f6f6f7;--line:#e6e6ea;--c:#00a8e1;--m:#e6007e;--y:#ffd400;--k:#2b2b2b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Montserrat,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  .cmyk{height:5px;background:linear-gradient(90deg,var(--c) 0 25%,var(--m) 25% 50%,var(--y) 50% 75%,var(--k) 75%)}
+  header{background:var(--ink);color:#fff}
+  .head{max-width:1200px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .head img{width:44px;height:44px;border-radius:50%}
+  .head h1{font-size:18px;flex:1}
+  .head h1 small{display:block;font-size:11px;color:var(--gold);font-weight:600}
+  .head a,.head button{color:#fff;background:none;border:1px solid #555;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;text-decoration:none}
+  main{max-width:1200px;margin:0 auto;padding:20px 16px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+  .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .center{max-width:420px;margin:60px auto;text-align:center}
+  .center img{width:120px;border-radius:50%;margin:0 auto 16px;display:block}
+  .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:11px 20px;font:inherit;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}
+  .btn.gold{background:var(--gold)} .btn.light{background:#eee;color:var(--ink)} .btn.sm{padding:6px 12px;font-size:12px}
+  .btn.red{background:var(--m)}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+  .stat b{display:block;font-size:22px}
+  .stat span{color:var(--muted);font-size:12px}
+  .ped-hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .ped-hd b{font-size:15px}
+  .muted{color:var(--muted);font-size:12px}
+  .itens{margin:10px 0;border-top:1px dashed var(--line);padding-top:8px}
+  .itens div{padding:2px 0}
+  select,input,textarea{border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;width:100%;background:#fff}
+  .st{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eee}
+  .st-novo{background:#e0f6fd;color:#00769e}.st-producao{background:#fff7cc;color:#8a6d00}.st-pronto{background:#e3f9e5;color:#137333}.st-entregue{background:#ececec;color:#444}.st-cancelado{background:#fde0f0;color:#a3005a}
+  .filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .filters select,.filters input{width:auto;flex:1;min-width:150px}
+  .prod{display:grid;grid-template-columns:72px 1fr;gap:12px}
+  .prod img{width:72px;height:72px;object-fit:cover;border-radius:10px;background:#eee}
+  .fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+  .fields label{font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+  .fields .wide{grid-column:1/-1}
+  .row-act{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  .final{font-weight:800;color:var(--gold-dark)}
+  table{width:100%;border-collapse:collapse}
+  td,th{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:13px}
+  .tbl{overflow-x:auto}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(100px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;transition:transform .25s;z-index:9}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  @media (max-width:640px){ .fields{grid-template-columns:1fr 1fr} .fields label:first-child{grid-column:1/-1} .prod{grid-template-columns:1fr} .prod img{width:100%;height:160px} }
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <img src="img/logo.jpg" alt="">
+    <h1>Painel Administrativo<small>GRUPO WD</small></h1>
+    <a href="./">← Ver site</a>
+    <button id="btnSair" style="display:none" onclick="WD.sair()">Sair</button>
+  </div>
+  <div class="cmyk"></div>
+</header>
+
+<main id="app"><div class="center"><p class="muted">Carregando...</p></div></main>
+<div class="toast" id="toast"></div>
+
+<script src="js/produtos.js"></script>
+<script type="module">
+import * as WD from './js/wd-firebase.js';
+window.WD = WD;
+const $ = id => document.getElementById(id);
+const app = $('app');
+const brl = v => (+v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const data = t => t?.seconds ? new Date(t.seconds * 1000).toLocaleString('pt-BR') : '';
+const STATUS = { novo:'Recebido', producao:'Em produção', pronto:'Pronto / enviado', entregue:'Entregue', cancelado:'Cancelado' };
+let tt; const toast = t => { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 2000); };
+
+let aba = 'pedidos', pedidos = [], produtos = [], clientes = [], filtro = { status:'', q:'' };
+
+if (!WD.configurado) {
+  app.innerHTML = `<div class="center box"><h2>Firebase não configurado</h2><p class="muted" style="margin-top:8px">Preencha o arquivo <b>js/firebase-config.js</b> com os dados do seu projeto Firebase (veja o LEIA-ME.md).</p></div>`;
+} else {
+  WD.aoMudarUsuario(u => {
+    $('btnSair').style.display = u ? 'inline-block' : 'none';
+    if (!u) {
+      app.innerHTML = `<div class="center box"><img src="img/logo.jpg" alt=""><h2>Acesso restrito</h2>
+        <p class="muted" style="margin:8px 0 18px">Entre com a conta Google administradora.</p>
+        <button class="btn gold" id="btnEntrar">Entrar com Google</button></div>`;
+      $('btnEntrar').onclick = () => WD.entrar().catch(e => alert(e.message));
+    } else if (!WD.ehAdmin(u)) {
+      app.innerHTML = `<div class="center box"><h2>Acesso negado</h2>
+        <p class="muted" style="margin:8px 0 18px">A conta <b>${esc(u.email)}</b> não tem permissão de administrador.</p>
+        <button class="btn" onclick="WD.sair()">Entrar com outra conta</button></div>`;
+    } else {
+      carregar();
+    }
+  });
+}
+
+async function carregar() {
+  app.innerHTML = '<div class="center"><p class="muted">Carregando dados...</p></div>';
+  try {
+    [pedidos, produtos, clientes] = await Promise.all([WD.todosPedidos(), WD.listarProdutos().then(l => l || []), WD.todosClientes()]);
+    render();
+  } catch (e) {
+    app.innerHTML = `<div class="center box"><h2>Erro ao carregar</h2><p class="muted">${esc(e.message)}</p><p class="muted" style="margin-top:8px">Confira se as regras do Firestore (firestore.rules) foram publicadas.</p></div>`;
+  }
+}
+
+function render() {
+  const abertos = pedidos.filter(p => ['novo','producao','pronto'].includes(p.status));
+  const faturado = pedidos.filter(p => p.status !== 'cancelado').reduce((s, p) => s + (+p.total || 0), 0);
+  app.innerHTML = `
+    <div class="stats">
+      <div class="stat"><b>${pedidos.filter(p => p.status === 'novo').length}</b><span>Pedidos novos</span></div>
+      <div class="stat"><b>${abertos.length}</b><span>Em aberto</span></div>
+      <div class="stat"><b>${brl(faturado)}</b><span>Total em pedidos</span></div>
+      <div class="stat"><b>${clientes.length}</b><span>Clientes cadastrados</span></div>
+    </div>
+    <div class="tabs">
+      ${[['pedidos','📦 Pedidos'],['produtos','🏷️ Produtos'],['clientes','👥 Clientes']].map(([k, t]) =>
+        `<button class="${aba === k ? 'on' : ''}" data-aba="${k}">${t}</button>`).join('')}
+      <button data-recarregar>🔄 Atualizar</button>
+    </div>
+    <div id="conteudo"></div>`;
+  app.querySelectorAll('[data-aba]').forEach(b => b.onclick = () => { aba = b.dataset.aba; render(); });
+  app.querySelector('[data-recarregar]').onclick = carregar;
+  ({ pedidos: renderPedidos, produtos: renderProdutos, clientes: renderClientes })[aba]();
+}
+
+/* ---------- PEDIDOS ---------- */
+function renderPedidos() {
+  const q = filtro.q.toLowerCase();
+  const lista = pedidos.filter(p => (!filtro.status || p.status === filtro.status) &&
+    (!q || [p.nome, p.email, p.id].join(' ').toLowerCase().includes(q)));
+  $('conteudo').innerHTML = `
+    <div class="filters">
+      <select id="fSt"><option value="">Todos os status</option>${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filtro.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <input id="fQ" placeholder="Buscar por cliente, e-mail ou nº" value="${esc(filtro.q)}">
+    </div>
+    ${lista.length ? lista.map(p => `
+      <div class="box">
+        <div class="ped-hd">
+          <div><b>Pedido ${esc(p.id.slice(0, 6).toUpperCase())}</b> <span class="st st-${esc(p.status)}">${esc(STATUS[p.status] || p.status)}</span>
+            <div class="muted">${data(p.criadoEm)} · ${esc(p.nome || '—')} · ${esc(p.email)}</div></div>
+          <b>${brl(p.total)}</b>
+        </div>
+        <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${esc(i.un)}/lote · ${brl(i.preco * i.q)}</span></div>`).join('')}
+          ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}</div>
+        <div class="row-act">
+          <select data-st="${esc(p.id)}" style="width:auto">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${p.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+          <button class="btn sm red" data-del="${esc(p.id)}">Excluir</button>
+        </div>
+      </div>`).join('') : '<div class="box muted">Nenhum pedido encontrado.</div>'}`;
+  $('fSt').onchange = e => { filtro.status = e.target.value; renderPedidos(); };
+  $('fQ').oninput = e => { filtro.q = e.target.value; const pos = e.target.selectionStart; renderPedidos(); $('fQ').focus(); $('fQ').setSelectionRange(pos, pos); };
+  document.querySelectorAll('[data-st]').forEach(s => s.onchange = async () => {
+    try { await WD.mudarStatus(s.dataset.st, s.value); pedidos.find(p => p.id === s.dataset.st).status = s.value; toast('Status atualizado ✔'); render(); }
+    catch (e) { alert(e.message); }
+  });
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('Excluir este pedido definitivamente?')) return;
+    try { await WD.excluirPedido(b.dataset.del); pedidos = pedidos.filter(p => p.id !== b.dataset.del); toast('Pedido excluído'); render(); }
+    catch (e) { alert(e.message); }
+  });
+}
+
+/* ---------- PRODUTOS ---------- */
+function renderProdutos() {
+  if (!produtos.length) {
+    $('conteudo').innerHTML = `<div class="box center" style="margin:0 auto">
+      <h3>Catálogo ainda não está no banco</h3>
+      <p class="muted" style="margin:8px 0 16px">O site está usando a lista padrão (${PRODUTOS_PADRAO.length} produtos). Importe para poder editar preços e produtos por aqui.</p>
+      <button class="btn gold" id="btnImp">Importar catálogo padrão</button></div>`;
+    $('btnImp').onclick = async () => {
+      try { await WD.importarProdutos(PRODUTOS_PADRAO); toast('Catálogo importado ✔'); carregar(); } catch (e) { alert(e.message); }
+    };
+    return;
+  }
+  $('conteudo').innerHTML = `
+    <div class="box"><b>Multiplicador:</b> preço final = preço de revenda × ${String(MULTIPLICADOR).replace('.', ',')}
+      <span class="muted">(para mudar, edite js/produtos.js)</span></div>
+    <div style="margin-bottom:12px"><button class="btn gold" id="btnNovo">+ Novo produto</button></div>
+    ${produtos.map(p => cardProduto(p)).join('')}`;
+  $('btnNovo').onclick = () => {
+    const id = prompt('Código do novo produto (sem espaços, ex: imã-geladeira):');
+    if (!id) return;
+    const slug = id.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9-]+/g, '-');
+    if (produtos.some(p => p.id === slug)) return alert('Já existe um produto com esse código.');
+    produtos.unshift({ id: slug, nome: '', cat: '', spec: '', un: '1 unidade', base: 0, ativo: false, ordem: -1, img: '' });
+    renderProdutos();
+  };
+  document.querySelectorAll('[data-save]').forEach(b => b.onclick = () => salvar(b.dataset.save));
+  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => {
+    if (!confirm('Excluir este produto do catálogo?')) return;
+    try { await WD.excluirProduto(b.dataset.rm); produtos = produtos.filter(p => p.id !== b.dataset.rm); toast('Produto excluído'); renderProdutos(); }
+    catch (e) { alert(e.message); }
+  });
+  document.querySelectorAll('[data-f="base"]').forEach(i => i.oninput = () => {
+    i.closest('.box').querySelector('.final').textContent = brl(Math.round(parseFloat(i.value.replace(',', '.')) * MULTIPLICADOR * 100) / 100);
+  });
+}
+function cardProduto(p) {
+  const f = (k, label, cls = '') => `<label class="${cls}">${label}<input data-f="${k}" value="${esc(p[k])}"></label>`;
+  return `<div class="box" data-id="${esc(p.id)}">
+    <div class="prod">
+      <img src="${esc(p.img || `img/produtos/${p.id}.webp`)}" alt="" onerror="this.style.visibility='hidden'">
+      <div>
+        <div class="fields">
+          ${f('nome', 'Nome')}${f('cat', 'Categoria')}${f('tag', 'Selo (ex: Lançamento)')}
+          ${f('spec', 'Especificação', 'wide')}
+          ${f('un', 'Quantidade do lote')}${f('base', 'Preço revenda (R$)')}
+          <label>Preço final no site<span class="final" style="padding:8px 0">${brl(Math.round(p.base * MULTIPLICADOR * 100) / 100)}</span></label>
+          ${f('img', 'URL da imagem (vazio = imagem padrão)', 'wide')}
+        </div>
+        <div class="row-act">
+          <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="ativo" ${p.ativo !== false ? 'checked' : ''} style="width:auto"> Visível no site</label>
+          <span class="muted">Código: ${esc(p.id)}</span>
+          <span style="flex:1"></span>
+          <button class="btn sm red" data-rm="${esc(p.id)}">Excluir</button>
+          <button class="btn sm gold" data-save="${esc(p.id)}">Salvar</button>
+        </div>
+      </div>
+    </div></div>`;
+}
+async function salvar(id) {
+  const box = document.querySelector(`[data-id="${CSS.escape(id)}"]`);
+  const v = k => box.querySelector(`[data-f="${k}"]`);
+  const base = parseFloat(v('base').value.replace(',', '.'));
+  if (!v('nome').value.trim() || !v('cat').value.trim()) return alert('Preencha nome e categoria.');
+  if (!(base > 0)) return alert('Informe um preço de revenda válido.');
+  const p = produtos.find(x => x.id === id);
+  const dados = { nome: v('nome').value.trim(), cat: v('cat').value.trim(), tag: v('tag').value.trim(), spec: v('spec').value.trim(),
+    un: v('un').value.trim(), base, img: v('img').value.trim(), ativo: v('ativo').checked, ordem: p.ordem ?? produtos.length };
+  try { await WD.salvarProduto(id, dados); Object.assign(p, dados); toast('Produto salvo ✔'); }
+  catch (e) { alert(e.message); }
+}
+
+/* ---------- CLIENTES ---------- */
+function renderClientes() {
+  const qtd = uid => pedidos.filter(p => p.uid === uid).length;
+  const lista = [...clientes].sort((a, b) => (b.ultimoLogin?.seconds || 0) - (a.ultimoLogin?.seconds || 0));
+  $('conteudo').innerHTML = `<div class="box tbl"><table>
+    <tr><th>Cliente</th><th>E-mail</th><th>Pedidos</th><th>Último acesso</th></tr>
+    ${lista.map(c => `<tr><td>${esc(c.nome || '—')}</td><td>${esc(c.email)}</td><td>${qtd(c.id)}</td><td>${data(c.ultimoLogin)}</td></tr>`).join('') ||
+      '<tr><td colspan="4" class="muted">Nenhum cliente ainda.</td></tr>'}
+  </table></div>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function logado() { return request.auth != null; }
+    function admin() {
+      return logado()
+        && request.auth.token.email == 'grupowdoficial@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    // Catálogo: todos leem, só o ADM altera.
+    match /produtos/{id} {
+      allow read: if true;
+      allow write: if admin();
+    }
+
+    // Clientes: cada um mexe só no próprio cadastro; ADM lê todos.
+    match /clientes/{uid} {
+      allow read: if admin() || (logado() && request.auth.uid == uid);
+      allow create, update: if logado() && request.auth.uid == uid;
+    }
+
+    // Pedidos: cliente cria e vê os seus; só o ADM muda status ou exclui.
+    match /pedidos/{id} {
+      allow create: if logado()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'novo';
+      allow read: if admin() || (logado() && resource.data.uid == request.auth.uid);
+      allow update, delete: if admin();
+    }
+  }
+}
