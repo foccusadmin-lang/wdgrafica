@@ -14,23 +14,17 @@ service cloud.firestore {
     function texto(v, max) { return v is string && v.size() <= max; }
     function novos() { return request.resource.data; }
 
-    // ---------- catálogo ----------
-    // Todos leem; só o ADM cria/edita/exclui, com campos validados.
-    match /produtos/{id} {
+    // ---------- ajustes do catálogo ----------
+    // O catálogo e os preços ficam no site (data/catalogo.json). Aqui o ADM só oculta, renomeia ou destaca produtos.
+    match /ajustes/{slug} {
       allow read: if true;
       allow delete: if admin();
       allow create, update: if admin()
-        && id.matches('^[a-z0-9-]{1,60}$')
-        && novos().keys().hasOnly(['nome', 'cat', 'spec', 'un', 'base', 'tag', 'img', 'ativo', 'ordem'])
-        && texto(novos().nome, 120) && novos().nome.size() > 0
-        && texto(novos().cat, 60) && novos().cat.size() > 0
-        && texto(novos().get('spec', ''), 300)
-        && texto(novos().get('un', ''), 60)
-        && texto(novos().get('tag', ''), 40)
-        && texto(novos().get('img', ''), 500)
-        && novos().base is number && novos().base > 0 && novos().base < 100000
-        && novos().get('ativo', true) is bool
-        && novos().get('ordem', 0) is number;
+        && slug.matches('^[a-z0-9-]{1,100}$')
+        && novos().keys().hasOnly(['ativo', 'destaque', 'nome'])
+        && novos().ativo is bool
+        && novos().destaque is bool
+        && texto(novos().nome, 120);
     }
 
     // ---------- clientes ----------

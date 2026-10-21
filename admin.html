@@ -73,7 +73,6 @@
 <main id="app"><div class="center"><p class="muted">Carregando...</p></div></main>
 <div class="toast" id="toast"></div>
 
-<script src="js/produtos.js"></script>
 <script type="module">
 import * as WD from './js/wd-firebase.js';
 window.WD = WD;
@@ -85,7 +84,8 @@ const data = t => t?.seconds ? new Date(t.seconds * 1000).toLocaleString('pt-BR'
 const STATUS = { novo:'Recebido', producao:'Em produção', pronto:'Pronto / enviado', entregue:'Entregue', cancelado:'Cancelado' };
 let tt; const toast = t => { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 2000); };
 
-let aba = 'pedidos', pedidos = [], produtos = [], clientes = [], filtro = { status:'', q:'' };
+let aba = 'pedidos', pedidos = [], CAT = null, ajustes = {}, clientes = [], filtro = { status:'', q:'' }, filtroProd = '';
+const P = v => Math.round(v * (CAT?.mult || 2.5) * 100) / 100;
 
 if (!WD.configurado) {
   app.innerHTML = `<div class="center box"><h2>Firebase não configurado</h2><p class="muted" style="margin-top:8px">Preencha o arquivo <b>js/firebase-config.js</b> com os dados do seu projeto Firebase (veja o LEIA-ME.md).</p></div>`;
@@ -110,7 +110,7 @@ if (!WD.configurado) {
 async function carregar() {
   app.innerHTML = '<div class="center"><p class="muted">Carregando dados...</p></div>';
   try {
-    [pedidos, produtos, clientes] = await Promise.all([WD.todosPedidos(), WD.listarProdutos().then(l => l || []), WD.todosClientes()]);
+    [pedidos, CAT, ajustes, clientes] = await Promise.all([WD.todosPedidos(), fetch('data/catalogo.json', { cache: 'no-cache' }).then(r => r.json()), WD.lerAjustes(), WD.todosClientes()]);
     render();
   } catch (e) {
     app.innerHTML = `<div class="center box"><h2>Erro ao carregar</h2><p class="muted">${esc(e.message)}</p><p class="muted" style="margin-top:8px">Confira se as regras do Firestore (firestore.rules) foram publicadas.</p></div>`;
@@ -140,16 +140,25 @@ function render() {
 
 /* ---------- PEDIDOS ---------- */
 // O preço é calculado no navegador do cliente: confere com o catálogo atual para detectar valores alterados.
+function precoCatalogo(i) {
+  const f = CAT.fams[i.fam]; if (!f) return null;
+  let q = null, v = null;
+  for (const x of f.vars) { const y = x.q.find(z => z[2] === i.id); if (y) { q = y; v = x; break; } }
+  if (!q) return null;
+  const ex = (v.x || []).filter(x => (i.ex || []).includes(x[0])).reduce((a, x) => a + P(x[3]), 0);
+  const sv = CAT.servicos.filter(s => (i.sv || []).includes(s.id)).reduce((a, s) => a + P(s.preco), 0);
+  return Math.round((P(q[1]) + ex + sv) * 100) / 100;
+}
 function conferir(p) {
   const avisos = [];
   let soma = 0;
   for (const i of p.itens || []) {
-    const prod = produtos.find(x => x.id === i.id);
     const q = +i.q || 0; soma += (+i.preco || 0) * q;
-    if (!prod) { avisos.push(`"${i.nome}" não existe mais no catálogo`); continue; }
-    const certo = Math.round(prod.base * MULTIPLICADOR * 100) / 100;
-    if (Math.abs(certo - i.preco) > 0.01) avisos.push(`${i.nome}: ${brl(i.preco)} no pedido, catálogo hoje ${brl(certo)}`);
     if (!Number.isInteger(q) || q < 1) avisos.push(`${i.nome}: quantidade inválida`);
+    if (!i.fam) continue; // pedido antigo, sem referência ao catálogo
+    const certo = precoCatalogo(i);
+    if (certo === null) { avisos.push(`"${i.nome}" (${i.un || ''}) não está mais no catálogo`); continue; }
+    if (Math.abs(certo - i.preco) > 0.01) avisos.push(`${i.nome} (${i.un || ''}): ${brl(i.preco)} no pedido, catálogo hoje ${brl(certo)}`);
   }
   if (Math.abs(soma - p.total) > 0.01) avisos.push(`Total do pedido (${brl(p.total)}) não bate com a soma dos itens (${brl(soma)})`);
   return avisos;
@@ -170,7 +179,7 @@ function renderPedidos() {
             <div class="muted">${data(p.criadoEm)} · ${esc(p.nome || '—')} · ${esc(p.email)}</div></div>
           <b>${brl(p.total)}</b>
         </div>
-        <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${esc(i.un)}/lote · ${brl(i.preco * i.q)}</span></div>`).join('')}
+        <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.un || '')} — ${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${brl(i.preco * i.q)}</span></div>`).join('')}
           ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}</div>
         ${(a => a.length ? `<div style="background:#fff4e5;border:1px solid #f0b46a;color:#8a4b00;border-radius:10px;padding:8px 10px;font-size:12px;margin-bottom:8px">⚠️ Confira os valores antes de confirmar:<br>${a.map(esc).join('<br>')}</div>` : '')(conferir(p))}
         <div class="row-act">
@@ -191,75 +200,52 @@ function renderPedidos() {
   });
 }
 
-/* ---------- PRODUTOS ---------- */
+/* ---------- PRODUTOS (ajustes sobre o catálogo) ---------- */
 function renderProdutos() {
-  if (!produtos.length) {
-    $('conteudo').innerHTML = `<div class="box center" style="margin:0 auto">
-      <h3>Catálogo ainda não está no banco</h3>
-      <p class="muted" style="margin:8px 0 16px">O site está usando a lista padrão (${PRODUTOS_PADRAO.length} produtos). Importe para poder editar preços e produtos por aqui.</p>
-      <button class="btn gold" id="btnImp">Importar catálogo padrão</button></div>`;
-    $('btnImp').onclick = async () => {
-      try { await WD.importarProdutos(PRODUTOS_PADRAO); toast('Catálogo importado ✔'); carregar(); } catch (e) { alert(e.message); }
-    };
-    return;
-  }
+  const t = filtroProd.toLowerCase();
+  const nVar = Object.values(CAT.fams).reduce((a, f) => a + f.vars.length, 0);
+  const nPreco = Object.values(CAT.fams).reduce((a, f) => a + f.vars.reduce((b, v) => b + v.q.length, 0), 0);
   $('conteudo').innerHTML = `
-    <div class="box"><b>Multiplicador:</b> preço final = preço de revenda × ${String(MULTIPLICADOR).replace('.', ',')}
-      <span class="muted">(para mudar, edite js/produtos.js)</span></div>
-    <div style="margin-bottom:12px"><button class="btn gold" id="btnNovo">+ Novo produto</button></div>
-    ${produtos.map(p => cardProduto(p)).join('')}`;
-  $('btnNovo').onclick = () => {
-    const id = prompt('Código do novo produto (sem espaços, ex: imã-geladeira):');
-    if (!id) return;
-    const slug = id.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9-]+/g, '-');
-    if (produtos.some(p => p.id === slug)) return alert('Já existe um produto com esse código.');
-    produtos.unshift({ id: slug, nome: '', cat: '', spec: '', un: '1 unidade', base: 0, ativo: false, ordem: -1, img: '' });
-    renderProdutos();
-  };
-  document.querySelectorAll('[data-save]').forEach(b => b.onclick = () => salvar(b.dataset.save));
-  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => {
-    if (!confirm('Excluir este produto do catálogo?')) return;
-    try { await WD.excluirProduto(b.dataset.rm); produtos = produtos.filter(p => p.id !== b.dataset.rm); toast('Produto excluído'); renderProdutos(); }
-    catch (e) { alert(e.message); }
-  });
-  document.querySelectorAll('[data-f="base"]').forEach(i => i.oninput = () => {
-    i.closest('.box').querySelector('.final').textContent = brl(Math.round(parseFloat(i.value.replace(',', '.')) * MULTIPLICADOR * 100) / 100);
-  });
+    <div class="box"><b>Catálogo:</b> ${Object.keys(CAT.fams).length} produtos, ${nVar} combinações e ${nPreco} preços
+      · atualizado em ${new Date(CAT.geradoEm).toLocaleString('pt-BR')}<br>
+      <span class="muted">Preço no site = preço de referência × ${String(CAT.mult).replace('.', ',')}. Aqui você pode ocultar, renomear ou destacar produtos.</span></div>
+    <div class="filters"><input id="fP" placeholder="Buscar produto" value="${esc(filtroProd)}"></div>
+    ${CAT.cats.map(c => {
+      const fams = c.fams.filter(s => !t || (ajustes[s]?.nome || CAT.fams[s].nome).toLowerCase().includes(t));
+      if (!fams.length) return '';
+      return `<h3 style="margin:18px 0 8px">${esc(c.nome)}</h3>` + fams.map(s => {
+        const f = CAT.fams[s], a = ajustes[s] || {};
+        const min = Math.min(...f.vars.flatMap(v => v.q.map(q => q[1])));
+        return `<div class="box prod" data-slug="${esc(s)}">
+          <img src="${esc(f.img)}" alt="">
+          <div>
+            <div class="fields">
+              <label class="wide">Nome no site<input data-f="nome" value="${esc(a.nome || f.nome)}" placeholder="${esc(f.nome)}"></label>
+            </div>
+            <div class="muted" style="margin-top:6px">${f.vars.length} combinações · a partir de ${brl(P(min))}</div>
+            <div class="row-act">
+              <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="ativo" ${a.ativo !== false ? 'checked' : ''} style="width:auto"> Visível no site</label>
+              <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="destaque" ${a.destaque ? 'checked' : ''} style="width:auto"> Selo "Mais vendido"</label>
+              <span style="flex:1"></span>
+              <a class="btn sm light" href="./#/p/${esc(s)}" target="_blank">Ver no site</a>
+              <button class="btn sm gold" data-save>Salvar</button>
+            </div>
+          </div></div>`;
+      }).join('');
+    }).join('')}`;
+  $('fP').oninput = e => { filtroProd = e.target.value; const pos = e.target.selectionStart; renderProdutos(); $('fP').focus(); $('fP').setSelectionRange(pos, pos); };
+  document.querySelectorAll('[data-save]').forEach(b => b.onclick = () => salvarAjuste(b.closest('[data-slug]')));
 }
-function cardProduto(p) {
-  const f = (k, label, cls = '') => `<label class="${cls}">${label}<input data-f="${k}" value="${esc(p[k])}"></label>`;
-  return `<div class="box" data-id="${esc(p.id)}">
-    <div class="prod">
-      <img src="${esc(p.img || `img/produtos/${p.id}.webp`)}" alt="" onerror="this.style.visibility='hidden'">
-      <div>
-        <div class="fields">
-          ${f('nome', 'Nome')}${f('cat', 'Categoria')}${f('tag', 'Selo (ex: Lançamento)')}
-          ${f('spec', 'Especificação', 'wide')}
-          ${f('un', 'Quantidade do lote')}${f('base', 'Preço revenda (R$)')}
-          <label>Preço final no site<span class="final" style="padding:8px 0">${brl(Math.round(p.base * MULTIPLICADOR * 100) / 100)}</span></label>
-          ${f('img', 'URL da imagem (vazio = imagem padrão)', 'wide')}
-        </div>
-        <div class="row-act">
-          <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="ativo" ${p.ativo !== false ? 'checked' : ''} style="width:auto"> Visível no site</label>
-          <span class="muted">Código: ${esc(p.id)}</span>
-          <span style="flex:1"></span>
-          <button class="btn sm red" data-rm="${esc(p.id)}">Excluir</button>
-          <button class="btn sm gold" data-save="${esc(p.id)}">Salvar</button>
-        </div>
-      </div>
-    </div></div>`;
-}
-async function salvar(id) {
-  const box = document.querySelector(`[data-id="${CSS.escape(id)}"]`);
+async function salvarAjuste(box) {
+  const s = box.dataset.slug, f = CAT.fams[s];
   const v = k => box.querySelector(`[data-f="${k}"]`);
-  const base = parseFloat(v('base').value.replace(',', '.'));
-  if (!v('nome').value.trim() || !v('cat').value.trim()) return alert('Preencha nome e categoria.');
-  if (!(base > 0)) return alert('Informe um preço de revenda válido.');
-  const p = produtos.find(x => x.id === id);
-  const dados = { nome: v('nome').value.trim(), cat: v('cat').value.trim(), tag: v('tag').value.trim(), spec: v('spec').value.trim(),
-    un: v('un').value.trim(), base, img: v('img').value.trim(), ativo: v('ativo').checked, ordem: p.ordem ?? produtos.length };
-  try { await WD.salvarProduto(id, dados); Object.assign(p, dados); toast('Produto salvo ✔'); }
-  catch (e) { alert(e.message); }
+  const nome = v('nome').value.trim();
+  const dados = { ativo: v('ativo').checked, destaque: v('destaque').checked, nome: nome && nome !== f.nome ? nome : '' };
+  try {
+    if (dados.ativo && !dados.destaque && !dados.nome) { await WD.removerAjuste(s); delete ajustes[s]; }
+    else { await WD.salvarAjuste(s, dados); ajustes[s] = dados; }
+    toast('Produto salvo ✔');
+  } catch (e) { alert(e.message); }
 }
 
 /* ---------- CLIENTES ---------- */

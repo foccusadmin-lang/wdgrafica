@@ -45,9 +45,9 @@
   .brand span{font-weight:800;font-size:20px;line-height:1}
   .brand small{display:block;font-weight:600;font-size:11px;color:var(--gold-dark);letter-spacing:.5px}
   .search{flex:1;display:flex}
-  .search input{flex:1;border:2px solid var(--line);border-radius:999px 0 0 999px;padding:11px 18px;font:inherit;font-size:14px;outline:none}
+  .search input{flex:1;min-width:0;border:2px solid var(--line);border-radius:999px 0 0 999px;padding:11px 18px;font:inherit;font-size:14px;outline:none}
   .search input:focus{border-color:var(--gold)}
-  .search button{border:0;background:var(--gold);color:#fff;padding:0 20px;border-radius:0 999px 999px 0;cursor:pointer;font-weight:700}
+  .search button{border:0;background:var(--gold);color:#fff;padding:0 16px;flex-shrink:0;border-radius:0 999px 999px 0;cursor:pointer;font-weight:700}
   .actions{display:flex;gap:10px;align-items:center}
   .btn-cart{position:relative;border:0;background:var(--ink);color:#fff;border-radius:999px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer;display:flex;gap:8px;align-items:center}
   .btn-cart .count{background:var(--y);color:var(--ink);border-radius:999px;font-size:12px;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
@@ -55,8 +55,6 @@
 
   nav.cats{background:#fff;border-top:1px solid var(--line)}
   nav.cats .wrap{display:flex;gap:6px;overflow-x:auto;padding:8px 16px;scrollbar-width:none}
-  nav.cats button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
-  nav.cats button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 
   .acct{position:relative}
   .btn-login{border:2px solid var(--ink);background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer;display:flex;gap:6px;align-items:center;white-space:nowrap}
@@ -126,18 +124,109 @@
   footer .brand span{color:#fff}
   .copy{text-align:center;font-size:12px;padding:14px;border-top:1px solid #444}
 
-  /* modal produto */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
-  .overlay.open{display:flex}
-  .modal{background:#fff;border-radius:18px;max-width:820px;width:100%;max-height:92vh;overflow:auto;display:grid;grid-template-columns:1fr 1fr}
-  .modal img{width:100%;height:100%;object-fit:cover;min-height:280px}
-  .modal .bd{padding:24px;display:flex;flex-direction:column;gap:12px;position:relative}
-  .modal .x{position:absolute;top:10px;right:12px;border:0;background:none;font-size:26px;cursor:pointer;color:var(--muted)}
-  .modal h3{font-size:22px;padding-right:24px}
   .qty{display:flex;align-items:center;gap:10px}
   .qty button{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:18px;cursor:pointer}
   .qty b{min-width:28px;text-align:center}
-  .modal .note{font-size:12px;color:var(--muted)}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:92vh;overflow:auto}
+  .modal .bd{padding:24px;display:flex;flex-direction:column;gap:12px;position:relative}
+  .modal .x{position:absolute;top:10px;right:12px;border:0;background:none;font-size:26px;cursor:pointer;color:var(--muted)}
+
+  /* navegação */
+  nav.cats a{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600;white-space:nowrap}
+  nav.cats a.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .crumbs{font-size:13px;color:var(--muted);padding:16px 0 10px}
+  .crumbs a:hover{color:var(--ink)}
+  .ver{font-weight:700;color:var(--gold-dark);font-size:14px}
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .cat-tile{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;text-align:center;font-weight:700;font-size:14px}
+  .cat-tile img{aspect-ratio:1;object-fit:cover;width:100%}
+  .cat-tile span{display:block;padding:10px}
+  .card .price small:first-child{display:block;font-size:11px}
+
+  /* categoria */
+  .banner{background:linear-gradient(110deg,#fff8d6,#fffdf3 60%,#fff);border-radius:18px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;min-height:180px;margin-bottom:20px;border:1px solid #f3e7b0}
+  .banner div{padding:28px 36px}
+  .banner h1{font-size:38px;font-weight:800}
+  .banner p{font-size:18px;margin-top:8px;color:#444}
+  .banner img{height:200px;width:auto;object-fit:cover;mix-blend-mode:multiply}
+  .cat-layout{display:grid;grid-template-columns:270px 1fr;gap:22px;align-items:start}
+  .filtros{background:#efeff1;border-radius:16px;padding:10px;position:sticky;top:150px;max-height:calc(100vh - 170px);overflow:auto}
+  .filtros-hd{display:flex;justify-content:space-between;align-items:center;padding:6px 8px 10px}
+  .filtros-hd .fechar{display:none;border:0;background:none;font-size:26px;cursor:pointer}
+  .link{border:0;background:none;color:var(--gold-dark);font:inherit;font-weight:700;cursor:pointer;font-size:13px}
+  .filtro{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .filtro summary{font-weight:700;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+  .filtro summary::after{content:"−";font-weight:400}
+  .filtro:not([open]) summary::after{content:"+"}
+  .fbusca{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:10px;font:inherit;font-size:13px}
+  .flista{max-height:230px;overflow:auto;margin-top:8px}
+  .flista label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:14px;cursor:pointer}
+  .flista input{width:18px;height:18px;accent-color:var(--gold)}
+  .flista em{font-style:normal;font-size:12px;font-weight:700;background:#f1f1f3;border-radius:6px;padding:1px 6px;color:#555}
+  .lista-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;font-size:14px}
+  .lista-hd select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;margin-left:6px}
+  .btn-filtros{display:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .chips button{border:0;background:var(--ink);color:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:12px;cursor:pointer}
+  .texto{background:#fff;border-radius:16px;padding:26px;margin:30px 0;font-size:15px;line-height:1.6}
+  .texto h3{font-size:19px;margin:16px 0 6px}
+  .texto h3:first-child{margin-top:0}
+  .texto ul{padding-left:20px;margin:6px 0}
+  .texto p{margin:6px 0}
+
+  /* produto */
+  .prod{padding-bottom:100px}
+  .prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+  .galeria{position:sticky;top:150px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+  .galeria img{width:100%;aspect-ratio:1;object-fit:cover}
+  .info h1{font-size:28px;font-weight:800;line-height:1.15}
+  .info .sub{color:var(--muted);margin:6px 0 10px}
+  .opc{margin:16px 0}
+  .opc>span{display:block;font-weight:700;margin-bottom:8px}
+  .opc-bts{display:flex;flex-wrap:wrap;gap:8px}
+  .opc-bts button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font:inherit;font-size:13px;cursor:pointer}
+  .opc-bts button:hover{border-color:var(--gold)}
+  .opc-bts button.on{border-color:#6b21a8;box-shadow:0 0 0 1px #6b21a8;font-weight:700}
+  .extras{display:grid;gap:8px}
+  .extras label{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:14px;background:#fff}
+  .extras label.on{border-color:var(--gold);background:#fffbea}
+  .extras small{color:var(--muted)}
+  .qtab{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px}
+  .qtab th{text-align:left;font-weight:700;padding:10px 12px;border-bottom:2px solid var(--line);font-size:13px}
+  .qtab td{padding:11px 12px;border-bottom:1px solid var(--line)}
+  .qtab tr{cursor:pointer}
+  .qtab tbody tr:hover{background:#fafafa}
+  .qtab tr.on{background:#fffbea}
+  .qtab label{display:flex;gap:8px;align-items:center;cursor:pointer}
+  .qtab input{accent-color:var(--gold)}
+  .off{font-style:normal;background:#4caf50;color:#fff;font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px}
+  .nota{font-size:12px;color:var(--muted);margin-top:6px}
+  .servicos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+  .serv{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-left:5px solid var(--cor);border-radius:12px;padding:12px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .serv.on{background:#fffbea;border-color:var(--gold);border-left-color:var(--cor)}
+  .serv input{margin-top:4px;accent-color:var(--gold)}
+  .serv i{font-style:normal;font-size:26px}
+  .serv b{display:block}
+  .serv span{font-weight:800}
+  .serv small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  .h3{font-size:18px;margin:20px 0 8px}
+  .specs{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+  .specs th,.specs td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--line)}
+  .specs th{width:42%;font-weight:700}
+  .ajuda{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px;align-items:center}
+  .btn-light{background:#fff;border:1.5px solid var(--ink);color:var(--ink);padding:10px 18px}
+  .cep{display:flex;flex:1;min-width:220px}
+  .cep input{flex:1;border:1px solid var(--line);border-radius:10px 0 0 10px;padding:11px;font:inherit;font-size:14px}
+  .cep button{border:0;background:#6b21a8;color:#fff;border-radius:0 10px 10px 0;padding:0 14px;font:inherit;font-weight:700;cursor:pointer}
+  .buybar{position:fixed;left:0;right:0;bottom:0;background:#fff;box-shadow:0 -6px 24px rgba(0,0,0,.12);z-index:30}
+  .buybar .wrap{display:flex;align-items:center;gap:14px;padding:10px 16px}
+  .bb-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+  .bb-txt small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bb-txt b{font-size:22px}
+  .buybar .btn{padding:12px 20px;white-space:nowrap}
+  body:has(.buybar) .wa-float{bottom:90px}
 
   /* carrinho */
   .drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,100%);background:#fff;z-index:60;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.2)}
@@ -161,6 +250,15 @@
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(100px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;z-index:70;transition:transform .25s}
   .toast.show{transform:translateX(-50%) translateY(0)}
 
+  @media (max-width:960px){
+    .cat-layout{grid-template-columns:1fr}
+    .filtros{display:none;position:fixed;inset:0;top:0;max-height:none;border-radius:0;z-index:65;padding:12px}
+    .filtros.open{display:block}
+    .filtros-hd .fechar{display:block}
+    .btn-filtros{display:inline-block}
+    .prod-grid{grid-template-columns:1fr;gap:18px}
+    .galeria{position:static;max-width:520px;margin:0 auto;width:100%}
+  }
   @media (max-width:860px){
     .head{flex-wrap:wrap}
     .search{order:3;flex-basis:100%}
@@ -172,10 +270,11 @@
     .hero-logo{width:200px;order:-1}
     .perks .wrap{grid-template-columns:1fr 1fr}
     footer .wrap{grid-template-columns:1fr}
-    .modal{grid-template-columns:1fr}
-    .modal img{min-height:0;max-height:300px}
+    .banner img{display:none}
+    .banner div{padding:22px}
+    .banner h1{font-size:28px}
   }
-  @media (max-width:480px){
+  @media (max-width:560px){
     .grid{grid-template-columns:1fr 1fr;gap:10px}
     .card .bd{padding:10px}
     .card h3{font-size:13px}
@@ -184,6 +283,15 @@
     .brand img{width:46px;height:46px}
     .btn-cart .lbl,.btn-login .lbl{display:none}
     .btn-login{padding:9px 11px}
+    .servicos{grid-template-columns:1fr}
+    .qtab{font-size:13px}
+    .qtab th,.qtab td{padding:9px 7px}
+    .info h1{font-size:23px}
+    .buybar .wrap{flex-wrap:wrap;gap:8px}
+    .bb-txt{flex-basis:100%}
+    .buybar .btn{flex:1;justify-content:center;padding:11px 10px}
+    body:has(.buybar) .wa-float{bottom:130px;width:50px;height:50px}
+    .texto{padding:18px}
   }
 </style>
 </head>
@@ -193,12 +301,12 @@
 
 <header>
   <div class="wrap head">
-    <a href="#" class="brand" onclick="setCat('Todos');return false">
+    <a href="#/" class="brand">
       <img src="img/logo.jpg" alt="Grupo WD">
       <div><span>Grupo WD</span><small>PENSOU A GENTE FAZ!</small></div>
     </a>
-    <form class="search" onsubmit="event.preventDefault();doSearch()">
-      <input id="q" type="search" placeholder="O que você precisa imprimir hoje?" oninput="doSearch()">
+    <form class="search" onsubmit="doSearch(event)">
+      <input id="q" type="search" placeholder="O que você precisa imprimir hoje?">
       <button type="submit">Buscar</button>
     </form>
     <div class="actions">
@@ -221,46 +329,7 @@
   <div class="cmyk"></div>
 </header>
 
-<div class="hero">
-  <div class="wrap">
-    <div>
-      <h1>Sua gráfica online.<br><em>Pensou, a gente faz!</em></h1>
-      <p>Cartões de visita, adesivos, folhetos, banners, brindes, embalagens e muito mais — com qualidade profissional e atendimento pertinho de você.</p>
-      <div class="cta">
-        <a href="#produtos" class="btn btn-gold">Ver produtos</a>
-        <a class="btn btn-wa" id="waHero" target="_blank" rel="noopener">💬 Pedir orçamento</a>
-      </div>
-    </div>
-    <img class="hero-logo" src="img/logo.jpg" alt="Grupo WD">
-  </div>
-</div>
-
-<div class="perks">
-  <div class="wrap">
-    <div class="perk"><i style="background:#e0f6fd">🚚</i><div><b>Entrega em todo Brasil</b>Envio seguro</div></div>
-    <div class="perk"><i style="background:#fde0f0">🎨</i><div><b>Criação de arte</b>Não tem arte? A gente cria</div></div>
-    <div class="perk"><i style="background:#fff7cc">⚡</i><div><b>Produção rápida</b>Prazos que cabem na sua agenda</div></div>
-    <div class="perk"><i style="background:#ececec">💳</i><div><b>Pix e cartão</b>Pagamento facilitado</div></div>
-  </div>
-</div>
-
-<main>
-  <section id="produtos">
-    <div class="wrap">
-      <div class="sec-title"><h2 id="secTitle">Nossos produtos</h2><span id="secCount"></span></div>
-      <div class="grid" id="grid"></div>
-    </div>
-  </section>
-
-  <section style="padding-top:0">
-    <div class="wrap">
-      <div class="art">
-        <div><h3>Não tem a arte pronta?</h3><p>Nossa equipe cria o design do seu material. Fale com a gente!</p></div>
-        <a class="btn btn-gold" id="waArt" target="_blank" rel="noopener">Quero criar minha arte</a>
-      </div>
-    </div>
-  </section>
-</main>
+<main id="app"><div class="wrap empty">Carregando catálogo...</div></main>
 
 <footer>
   <div class="cmyk"></div>
@@ -285,28 +354,9 @@
   <div class="copy">© <span id="year"></span> Grupo WD — CNPJ 32.990.408/0001-44 — Todos os direitos reservados. Preços sujeitos a alteração sem aviso prévio.</div>
 </footer>
 
-<!-- modal produto -->
-<div class="overlay" id="ov" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <img id="mImg" alt="">
-    <div class="bd">
-      <button class="x" onclick="closeModal()">×</button>
-      <div class="cat" id="mCat" style="font-size:12px;font-weight:700;color:var(--gold-dark);text-transform:uppercase"></div>
-      <h3 id="mName"></h3>
-      <div class="spec" id="mSpec" style="color:var(--muted);font-size:14px"></div>
-      <div class="price" id="mPrice"></div>
-      <div class="qty"><span>Quantidade de lotes:</span><button onclick="mQty(-1)">−</button><b id="mQ">1</b><button onclick="mQty(1)">+</button></div>
-      <div class="price" style="font-size:16px">Total: <span id="mTotal"></span></div>
-      <button class="btn btn-gold" onclick="addFromModal()">🛒 Adicionar ao carrinho</button>
-      <a class="btn btn-wa" id="mWa" target="_blank" rel="noopener" style="justify-content:center">💬 Tirar dúvidas no WhatsApp</a>
-      <p class="note">Precisa de outro tamanho, papel ou acabamento? Chame no WhatsApp que fazemos um orçamento personalizado.</p>
-    </div>
-  </div>
-</div>
-
 <!-- meus pedidos -->
 <div class="overlay" id="ovPed" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" style="display:block;max-width:560px">
+  <div class="modal">
     <div class="bd">
       <button class="x" onclick="$('ovPed').classList.remove('open')">×</button>
       <h3>📦 Meus pedidos</h3>
@@ -334,184 +384,13 @@
 </a>
 <div class="toast" id="toast"></div>
 
-<script src="js/produtos.js"></script>
-<script>
-/* ===== CONFIGURAÇÃO ===== */
-const WHATSAPP = '5511949632186';
-let PRODUTOS = PRODUTOS_PADRAO.slice();
-
-/* ===== LÓGICA ===== */
-const brl = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const preco = p => Math.round(p.base * MULTIPLICADOR * 100) / 100;
-const byId = id => PRODUTOS.find(p => p.id === id);
-const waUrl = msg => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-let catAtual = 'Todos';
-let cart = [];
-try { cart = JSON.parse(localStorage.getItem('wd-cart')) || []; } catch(e) {}
-
-let CATS = [];
-const calcCats = () => CATS = ['Todos', ...new Set(PRODUTOS.map(p => p.cat))];
-const imgDe = p => p.img || `img/produtos/${p.id}.webp`;
-calcCats();
-
-function renderCats(){
-  $('cats').innerHTML = CATS.map(c => `<button class="${c===catAtual?'on':''}" onclick="setCat('${c}')">${c}</button>`).join('');
-  $('footCats').innerHTML = CATS.slice(1).map(c => `<li><a href="#produtos" onclick="setCat('${c}')">${c}</a></li>`).join('');
-}
-function setCat(c){ catAtual = c; $('q').value=''; renderCats(); renderGrid(); document.getElementById('produtos').scrollIntoView({behavior:'smooth'}); }
-function doSearch(){ catAtual='Todos'; renderCats(); renderGrid(); }
-
-function renderGrid(){
-  const q = $('q').value.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  const list = PRODUTOS.filter(p => (catAtual==='Todos' || p.cat===catAtual) &&
-    (!q || (p.nome+' '+p.cat+' '+p.spec).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(q)));
-  $('secTitle').textContent = q ? `Resultados para "${$('q').value}"` : (catAtual==='Todos' ? 'Nossos produtos' : catAtual);
-  $('secCount').textContent = `${list.length} produto${list.length!==1?'s':''}`;
-  $('grid').innerHTML = list.length ? list.map(p => `
-    <div class="card">
-      <div class="ph" onclick="openModal('${p.id}')">
-        <img src="${imgDe(p)}" alt="${p.nome}" loading="lazy">
-        ${p.tag ? `<span class="tag ${p.tag==='Lançamento'?'new':''}">${p.tag}</span>` : ''}
-      </div>
-      <div class="bd">
-        <div class="cat">${p.cat}</div>
-        <h3 onclick="openModal('${p.id}')">${p.nome}</h3>
-        <div class="spec">${p.spec}</div>
-        <div class="price">${brl(preco(p))} <small>/ ${p.un}</small></div>
-        <button class="add" onclick="addCart('${p.id}',1)">Adicionar ao carrinho</button>
-      </div>
-    </div>`).join('') : `<div class="empty">Nenhum produto encontrado. <a style="color:var(--gold-dark);font-weight:700" href="${waUrl('Olá! Procuro um produto que não encontrei no site: '+$('q').value)}" target="_blank">Peça um orçamento pelo WhatsApp</a></div>`;
-}
-
-/* modal */
-let mId = null, mQ = 1;
-function openModal(id){
-  const p = byId(id); mId = id; mQ = 1;
-  $('mImg').src = imgDe(p); $('mImg').alt = p.nome;
-  $('mCat').textContent = p.cat; $('mName').textContent = p.nome; $('mSpec').textContent = p.spec;
-  $('mPrice').innerHTML = `${brl(preco(p))} <small>/ ${p.un}</small>`;
-  $('mWa').href = waUrl(`Olá, Grupo WD! Tenho interesse em: ${p.nome} (${p.spec}). Pode me ajudar?`);
-  updModal(); $('ov').classList.add('open');
-}
-function closeModal(){ $('ov').classList.remove('open'); }
-function mQty(d){ mQ = Math.max(1, mQ + d); updModal(); }
-function updModal(){ $('mQ').textContent = mQ; $('mTotal').textContent = brl(preco(byId(mId)) * mQ); }
-function addFromModal(){ addCart(mId, mQ); closeModal(); }
-
-/* carrinho */
-function save(){ try{ localStorage.setItem('wd-cart', JSON.stringify(cart)); }catch(e){} }
-function addCart(id, q){
-  const it = cart.find(i => i.id === id);
-  if (it) it.q += q; else cart.push({id, q});
-  save(); renderCart(); toast('Adicionado ao carrinho ✔');
-}
-function chg(id, d){
-  const it = cart.find(i => i.id === id); if (!it) return;
-  it.q += d; if (it.q < 1) cart = cart.filter(i => i.id !== id);
-  save(); renderCart();
-}
-function rm(id){ cart = cart.filter(i => i.id !== id); save(); renderCart(); }
-function clearCart(){ if (cart.length && confirm('Esvaziar o carrinho?')) { cart = []; save(); renderCart(); } }
-function cartTotal(){ return cart.reduce((s,i) => s + preco(byId(i.id)) * i.q, 0); }
-function renderCart(){
-  cart = cart.filter(i => byId(i.id));
-  $('count').textContent = cart.reduce((s,i) => s + i.q, 0);
-  $('items').innerHTML = cart.length ? cart.map(i => { const p = byId(i.id); return `
-    <div class="item">
-      <img src="${imgDe(p)}" alt="">
-      <div><h4>${p.nome}</h4><small>${p.un} por lote · ${brl(preco(p))}</small>
-        <div class="qty" style="margin-top:6px"><button onclick="chg('${p.id}',-1)">−</button><b>${i.q}</b><button onclick="chg('${p.id}',1)">+</button></div>
-        <button class="rm" onclick="rm('${p.id}')">Remover</button></div>
-      <b>${brl(preco(p) * i.q)}</b>
-    </div>`; }).join('') : '<p style="color:var(--muted);text-align:center;padding:40px 0">Seu carrinho está vazio.</p>';
-  $('total').textContent = brl(cartTotal());
-}
-function toggleCart(o){ $('drawer').classList.toggle('open', o); $('shade').classList.toggle('open', o); }
-async function checkout(){
-  if (!cart.length) { toast('Seu carrinho está vazio'); return; }
-  if (window.WD?.configurado && !usuario) {
-    if (confirm('Entre com sua conta Google para acompanhar seu pedido em "Meus pedidos".\n\nOK = entrar com Google\nCancelar = enviar só pelo WhatsApp')) { wdEntrar(); return; }
-  }
-  const nome = $('cName').value.trim() || usuario?.displayName || '', obs = $('cObs').value.trim();
-  const itens = cart.map(i => { const p = byId(i.id); return { id:p.id, nome:p.nome, spec:p.spec, un:p.un, q:i.q, preco:preco(p) }; });
-  const total = cartTotal();
-  const win = window.open('', '_blank');           // abre já, para o navegador não bloquear
-  let num = '';
-  if (usuario) {
-    try { const ref = await WD.criarPedido(usuario, { nome, obs, itens, total }); num = ref.id.slice(0,6).toUpperCase(); }
-    catch(e) { console.error(e); }
-  }
-  let msg = `Olá, Grupo WD! Gostaria de fazer um pedido${num ? ' (nº ' + num + ')' : ''}:\n\n`;
-  itens.forEach(i => { msg += `• ${i.q}x ${i.nome}\n   ${i.spec}\n   ${i.un} por lote — ${brl(i.preco * i.q)}\n`; });
-  msg += `\n*Total: ${brl(total)}*`;
-  if (nome) msg += `\n\nNome: ${nome}`;
-  if (usuario?.email) msg += `\nE-mail: ${usuario.email}`;
-  if (obs) msg += `\nObs.: ${obs}`;
-  if (win) win.location = waUrl(msg); else location.href = waUrl(msg);
-  if (num) { cart = []; save(); renderCart(); toggleCart(false); toast('Pedido ' + num + ' registrado ✔'); }
-}
-
-/* conta (Google) */
-let usuario = null;
-function wdEntrar(){ if (window.WD) WD.entrar().catch(e => alert('Não foi possível entrar: ' + e.message)); else alert('Carregando, tente novamente em instantes.'); }
-function wdSair(){ $('menu').classList.remove('open'); window.WD?.sair(); }
-function setUsuario(u, admin){
-  usuario = u;
-  $('btnLogin').style.display = u ? 'none' : 'flex';
-  $('avatar').style.display = u ? 'block' : 'none';
-  if (u) {
-    $('avatar').src = u.photoURL || 'img/icon-192.png';
-    $('uNome').textContent = u.displayName || 'Cliente';
-    $('uEmail').textContent = u.email || '';
-    if (!$('cName').value) $('cName').value = u.displayName || '';
-  }
-  $('lnkAdmin').style.display = admin ? 'block' : 'none';
-}
-const STATUS = { novo:'Recebido', producao:'Em produção', pronto:'Pronto / enviado', entregue:'Entregue', cancelado:'Cancelado' };
-async function abrirMeusPedidos(){
-  $('menu').classList.remove('open'); $('ovPed').classList.add('open');
-  $('listaPed').innerHTML = '<p style="color:var(--muted)">Carregando...</p>';
-  try {
-    const l = await WD.meusPedidos(usuario);
-    $('listaPed').innerHTML = l.length ? l.map(p => `<div class="ped">
-      <div style="display:flex;justify-content:space-between;gap:8px"><b>Pedido ${p.id.slice(0,6).toUpperCase()}</b><span class="st st-${esc(p.status)}">${esc(STATUS[p.status]||p.status)}</span></div>
-      <div style="color:var(--muted);margin:4px 0">${p.criadoEm ? new Date(p.criadoEm.seconds*1000).toLocaleString('pt-BR') : ''}</div>
-      ${p.itens.map(i => `<div>${esc(i.q)}x ${esc(i.nome)}</div>`).join('')}
-      <div style="font-weight:800;margin-top:6px">${brl(p.total)}</div></div>`).join('') : '<p style="color:var(--muted)">Você ainda não fez pedidos.</p>';
-  } catch(e) { $('listaPed').innerHTML = '<p>Erro ao carregar pedidos.</p>'; console.error(e); }
-}
-function setProdutos(lista){
-  PRODUTOS = lista.filter(p => p.ativo !== false);
-  calcCats(); if (!CATS.includes(catAtual)) catAtual = 'Todos';
-  renderCats(); renderGrid(); renderCart();
-}
-document.addEventListener('click', e => { if (!e.target.closest('#acct')) $('menu').classList.remove('open'); });
-
-let tt; function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),1800); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); toggleCart(false); } });
-
-/* init */
-const waHello = waUrl('Olá, Grupo WD! Gostaria de um orçamento.');
-['waTop','waHero','waFloat'].forEach(id => $(id).href = waHello);
-$('waArt').href = waUrl('Olá, Grupo WD! Preciso de ajuda para criar a arte do meu material.');
-$('year').textContent = new Date().getFullYear();
-renderCats(); renderGrid(); renderCart();
-
-/* app instalável (PWA) */
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-let installEvt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('btnInstall').style.display = 'flex'; });
-window.addEventListener('appinstalled', () => { $('btnInstall').style.display = 'none'; toast('App instalado ✔'); });
-function installApp(){ if (installEvt) { installEvt.prompt(); installEvt = null; $('btnInstall').style.display = 'none'; } }
-</script>
+<script src="js/textos.js"></script>
+<script src="js/loja.js"></script>
 <script type="module">
   import * as WD from './js/wd-firebase.js';
   window.WD = WD;
   WD.aoMudarUsuario(u => setUsuario(u, WD.ehAdmin(u)));
-  WD.listarProdutos().then(l => l && setProdutos(l)).catch(e => console.warn('Catálogo padrão em uso:', e.message));
+  WD.lerAjustes().then(a => setAjustes(a)).catch(e => console.warn('Ajustes indisponíveis:', e.message));
 </script>
 </body>
 </html>

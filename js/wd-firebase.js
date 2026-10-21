@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp, writeBatch }
+import { getFirestore, collection, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig, ADMIN_EMAIL } from "./firebase-config.js";
 
@@ -45,19 +45,14 @@ export function aoMudarUsuario(cb) {
   });
 }
 
-/* ---- produtos ---- */
-export async function listarProdutos() {
-  if (!configurado) return null;
-  const snap = await getDocs(query(collection(db, "produtos"), orderBy("ordem")));
-  return snap.empty ? null : snap.docs.map(d => ({ id: d.id, ...d.data() }));
+/* ---- ajustes do catálogo (ADM: ocultar, renomear, destacar produtos) ---- */
+export async function lerAjustes() {
+  if (!configurado) return {};
+  const snap = await getDocs(collection(db, "ajustes"));
+  return Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
 }
-export const salvarProduto = (id, dados) => setDoc(doc(db, "produtos", id), dados, { merge: true });
-export const excluirProduto = id => deleteDoc(doc(db, "produtos", id));
-export async function importarProdutos(lista) {
-  const b = writeBatch(db);
-  lista.forEach((p, i) => { const { id, ...d } = p; b.set(doc(db, "produtos", id), { ativo: true, ordem: i, ...d }); });
-  await b.commit();
-}
+export const salvarAjuste = (slug, dados) => setDoc(doc(db, "ajustes", slug), dados);
+export const removerAjuste = slug => deleteDoc(doc(db, "ajustes", slug));
 
 /* ---- pedidos ---- */
 export function criarPedido(u, pedido) {

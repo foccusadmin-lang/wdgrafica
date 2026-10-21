@@ -4,3 +4,5 @@ firebase-debug.log
 *.log
 .DS_Store
 Thumbs.db
+ferramentas/cache/
+ferramentas/node_modules/
