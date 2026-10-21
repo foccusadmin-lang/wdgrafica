@@ -1,13 +1,12 @@
-// Cole aqui a configuração do seu projeto Firebase
-// (Console Firebase > Configurações do projeto > Seus apps > App da Web > Configuração).
+// Configuração do projeto Firebase "wd-grafica-rapida".
 // Esses valores são públicos por natureza; a segurança fica nas regras (firestore.rules).
 export const firebaseConfig = {
-  apiKey: "COLE_AQUI",
-  authDomain: "COLE_AQUI.firebaseapp.com",
-  projectId: "COLE_AQUI",
-  storageBucket: "COLE_AQUI.appspot.com",
-  messagingSenderId: "COLE_AQUI",
-  appId: "COLE_AQUI"
+  apiKey: "AIzaSyA_6NgIEP8amAeHuTMTPtfASPrV1F8jzfY",
+  authDomain: "wd-grafica-rapida.firebaseapp.com",
+  projectId: "wd-grafica-rapida",
+  storageBucket: "wd-grafica-rapida.firebasestorage.app",
+  messagingSenderId: "303529745765",
+  appId: "1:303529745765:web:ea021a831bc65f417e158c"
 };
 
 // Depois que o site estiver no ar em wdgraficarapida.com.br (Firebase Hosting),

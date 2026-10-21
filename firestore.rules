@@ -1,32 +1,75 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function logado() { return request.auth != null; }
-    function admin() {
-      return logado()
-        && request.auth.token.email == 'grupowdoficial@gmail.com'
-        && request.auth.token.email_verified == true;
-    }
 
-    // Catálogo: todos leem, só o ADM altera.
+    // ---------- helpers ----------
+    function logado() { return request.auth != null; }
+    function emailVerificado() {
+      return logado() && request.auth.token.email != null && request.auth.token.email_verified == true;
+    }
+    // Único administrador do painel.
+    function admin() {
+      return emailVerificado() && request.auth.token.email == 'grupowdoficial@gmail.com';
+    }
+    function texto(v, max) { return v is string && v.size() <= max; }
+    function novos() { return request.resource.data; }
+
+    // ---------- catálogo ----------
+    // Todos leem; só o ADM cria/edita/exclui, com campos validados.
     match /produtos/{id} {
       allow read: if true;
-      allow write: if admin();
+      allow delete: if admin();
+      allow create, update: if admin()
+        && id.matches('^[a-z0-9-]{1,60}$')
+        && novos().keys().hasOnly(['nome', 'cat', 'spec', 'un', 'base', 'tag', 'img', 'ativo', 'ordem'])
+        && texto(novos().nome, 120) && novos().nome.size() > 0
+        && texto(novos().cat, 60) && novos().cat.size() > 0
+        && texto(novos().get('spec', ''), 300)
+        && texto(novos().get('un', ''), 60)
+        && texto(novos().get('tag', ''), 40)
+        && texto(novos().get('img', ''), 500)
+        && novos().base is number && novos().base > 0 && novos().base < 100000
+        && novos().get('ativo', true) is bool
+        && novos().get('ordem', 0) is number;
     }
 
-    // Clientes: cada um mexe só no próprio cadastro; ADM lê todos.
+    // ---------- clientes ----------
+    // Cada cliente só cria/atualiza o próprio cadastro (dados vindos da conta Google).
     match /clientes/{uid} {
       allow read: if admin() || (logado() && request.auth.uid == uid);
-      allow create, update: if logado() && request.auth.uid == uid;
+      allow create, update: if logado() && request.auth.uid == uid
+        && novos().keys().hasOnly(['nome', 'email', 'foto', 'ultimoLogin'])
+        && novos().email == request.auth.token.email
+        && texto(novos().nome, 120)
+        && texto(novos().foto, 500)
+        && novos().ultimoLogin == request.time;
+      allow delete: if admin();
     }
 
-    // Pedidos: cliente cria e vê os seus; só o ADM muda status ou exclui.
+    // ---------- pedidos ----------
     match /pedidos/{id} {
-      allow create: if logado()
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'novo';
+      // Cliente logado cria pedido em nome próprio, sempre com status "novo".
+      allow create: if emailVerificado()
+        && novos().keys().hasOnly(['uid', 'email', 'nome', 'obs', 'itens', 'total', 'status', 'criadoEm'])
+        && novos().uid == request.auth.uid
+        && novos().email == request.auth.token.email
+        && novos().status == 'novo'
+        && novos().criadoEm == request.time
+        && texto(novos().nome, 120)
+        && texto(novos().obs, 1000)
+        && novos().itens is list && novos().itens.size() > 0 && novos().itens.size() <= 50
+        && novos().total is number && novos().total > 0 && novos().total < 1000000;
+
+      // Cliente vê só os próprios pedidos; ADM vê todos.
       allow read: if admin() || (logado() && resource.data.uid == request.auth.uid);
-      allow update, delete: if admin();
+
+      // Só o ADM muda pedidos, e apenas o status.
+      allow update: if admin()
+        && novos().diff(resource.data).affectedKeys().hasOnly(['status'])
+        && novos().status in ['novo', 'producao', 'pronto', 'entregue', 'cancelado'];
+      allow delete: if admin();
     }
+
+    // Qualquer outra coleção fica fechada.
   }
 }

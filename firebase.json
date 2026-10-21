@@ -1,8 +1,43 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "LEIA-ME.md", "**/.*"],
-    "headers": [{ "source": "sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }]
+    "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "LEIA-ME.md", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+          { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" }
+        ]
+      },
+      { "source": "**/*.@(html|js|webmanifest)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      {
+        "source": "admin.html",
+        "headers": [
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "X-Robots-Tag", "value": "noindex" }
+        ]
+      },
+      { "source": "img/**", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] }
+    ]
   },
-  "firestore": { "rules": "firestore.rules" }
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Grupo WD",
+        "supportEmail": "foccusadmin@gmail.com",
+        "authorizedRedirectUris": [
+          "https://wd-grafica-rapida.firebaseapp.com/__/auth/handler",
+          "https://wd-grafica-rapida.web.app/__/auth/handler",
+          "https://wdgraficarapida.com.br/__/auth/handler"
+        ]
+      }
+    }
+  }
 }

@@ -346,6 +346,7 @@ const preco = p => Math.round(p.base * MULTIPLICADOR * 100) / 100;
 const byId = id => PRODUTOS.find(p => p.id === id);
 const waUrl = msg => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
 const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let catAtual = 'Todos';
 let cart = [];
@@ -476,9 +477,9 @@ async function abrirMeusPedidos(){
   try {
     const l = await WD.meusPedidos(usuario);
     $('listaPed').innerHTML = l.length ? l.map(p => `<div class="ped">
-      <div style="display:flex;justify-content:space-between;gap:8px"><b>Pedido ${p.id.slice(0,6).toUpperCase()}</b><span class="st st-${p.status}">${STATUS[p.status]||p.status}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px"><b>Pedido ${p.id.slice(0,6).toUpperCase()}</b><span class="st st-${esc(p.status)}">${esc(STATUS[p.status]||p.status)}</span></div>
       <div style="color:var(--muted);margin:4px 0">${p.criadoEm ? new Date(p.criadoEm.seconds*1000).toLocaleString('pt-BR') : ''}</div>
-      ${p.itens.map(i => `<div>${i.q}x ${i.nome}</div>`).join('')}
+      ${p.itens.map(i => `<div>${esc(i.q)}x ${esc(i.nome)}</div>`).join('')}
       <div style="font-weight:800;margin-top:6px">${brl(p.total)}</div></div>`).join('') : '<p style="color:var(--muted)">Você ainda não fez pedidos.</p>';
   } catch(e) { $('listaPed').innerHTML = '<p>Erro ao carregar pedidos.</p>'; console.error(e); }
 }

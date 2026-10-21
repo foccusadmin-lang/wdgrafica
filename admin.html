@@ -139,6 +139,21 @@ function render() {
 }
 
 /* ---------- PEDIDOS ---------- */
+// O preço é calculado no navegador do cliente: confere com o catálogo atual para detectar valores alterados.
+function conferir(p) {
+  const avisos = [];
+  let soma = 0;
+  for (const i of p.itens || []) {
+    const prod = produtos.find(x => x.id === i.id);
+    const q = +i.q || 0; soma += (+i.preco || 0) * q;
+    if (!prod) { avisos.push(`"${i.nome}" não existe mais no catálogo`); continue; }
+    const certo = Math.round(prod.base * MULTIPLICADOR * 100) / 100;
+    if (Math.abs(certo - i.preco) > 0.01) avisos.push(`${i.nome}: ${brl(i.preco)} no pedido, catálogo hoje ${brl(certo)}`);
+    if (!Number.isInteger(q) || q < 1) avisos.push(`${i.nome}: quantidade inválida`);
+  }
+  if (Math.abs(soma - p.total) > 0.01) avisos.push(`Total do pedido (${brl(p.total)}) não bate com a soma dos itens (${brl(soma)})`);
+  return avisos;
+}
 function renderPedidos() {
   const q = filtro.q.toLowerCase();
   const lista = pedidos.filter(p => (!filtro.status || p.status === filtro.status) &&
@@ -157,6 +172,7 @@ function renderPedidos() {
         </div>
         <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${esc(i.un)}/lote · ${brl(i.preco * i.q)}</span></div>`).join('')}
           ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}</div>
+        ${(a => a.length ? `<div style="background:#fff4e5;border:1px solid #f0b46a;color:#8a4b00;border-radius:10px;padding:8px 10px;font-size:12px;margin-bottom:8px">⚠️ Confira os valores antes de confirmar:<br>${a.map(esc).join('<br>')}</div>` : '')(conferir(p))}
         <div class="row-act">
           <select data-st="${esc(p.id)}" style="width:auto">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${p.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
           <button class="btn sm red" data-del="${esc(p.id)}">Excluir</button>

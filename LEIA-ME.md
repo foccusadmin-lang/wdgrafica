@@ -3,64 +3,59 @@
 Site + app (instalável no celular e no computador) com catálogo, carrinho,
 pedido pelo WhatsApp, login com Google e painel administrativo.
 
+- **Site no ar:** https://wd-grafica-rapida.web.app (e https://wdgraficarapida.com.br quando o DNS estiver ok)
+- **Painel ADM:** `/admin.html` — só entra **grupowdoficial@gmail.com**
+- **Projeto Firebase:** `wd-grafica-rapida` (console: https://console.firebase.google.com/project/wd-grafica-rapida)
+
 ## Arquivos
 
 | Arquivo | O que é |
 |---|---|
 | `index.html` | Loja (catálogo, carrinho, login do cliente, "Meus pedidos") |
-| `admin.html` | Painel ADM — só entra **grupowdoficial@gmail.com** |
+| `admin.html` | Painel ADM (pedidos, produtos, clientes) |
 | `js/produtos.js` | Catálogo padrão e o **MULTIPLICADOR = 2.5** (preço final = revenda × 2,5) |
-| `js/firebase-config.js` | Onde você cola a configuração do Firebase |
-| `firestore.rules` | Regras de segurança do banco (quem pode ler/alterar o quê) |
+| `js/firebase-config.js` | Configuração do app web do Firebase (valores públicos) |
+| `js/wd-firebase.js` | Login Google e acesso ao banco |
+| `firestore.rules` | Segurança do banco (quem pode ler/alterar o quê) |
+| `firebase.json` | Hospedagem, cabeçalhos de segurança, regras e login Google |
 | `manifest.webmanifest`, `sw.js` | Fazem o site virar app instalável |
 
-## Ativar o login com Google (uma vez só)
+## O que já está configurado no Firebase
 
-Faça tudo logado como **grupowdoficial@gmail.com**:
+- **Banco Firestore** em São Paulo (`southamerica-east1`), plano gratuito, com proteção contra exclusão.
+- **Coleções:** `produtos` (29 itens importados), `pedidos`, `clientes`.
+- **Login com Google** ativado. Domínios autorizados: `localhost`, `wd-grafica-rapida.web.app`,
+  `wd-grafica-rapida.firebaseapp.com`, `wdgraficarapida.com.br`, `www.wdgraficarapida.com.br`, `foccusadmin-lang.github.io`.
+- **Regras de segurança** (testadas com 24 casos no simulador oficial):
+  - catálogo: todos leem; só o ADM altera, com campos e preço validados;
+  - pedidos: cliente logado cria só em nome próprio, sempre com status "novo", e vê só os seus;
+    só o ADM vê todos e muda **apenas o status**;
+  - clientes: cada um grava só o próprio cadastro (sem poder se dar permissões); o ADM vê todos;
+  - qualquer outra coleção é bloqueada.
+- **Conferência de preços:** o painel avisa quando o valor de um pedido não bate com o catálogo.
+- **Hospedagem** com HTTPS, cabeçalhos de segurança e painel ADM fora do Google.
 
-1. Acesse https://console.firebase.google.com → **Adicionar projeto** → nome `grupo-wd`.
-2. **Build → Authentication → Começar → Google → Ativar** → salve.
-3. **Build → Firestore Database → Criar banco de dados** → local `southamerica-east1 (São Paulo)` → modo produção.
-4. Na aba **Regras** do Firestore, apague tudo, cole o conteúdo de `firestore.rules` e clique **Publicar**.
-5. **Configurações do projeto (engrenagem) → Seus apps → `</>` (Web)** → apelido `site` → registrar.
-   Copie os valores do `firebaseConfig` para o arquivo `js/firebase-config.js`.
-6. **Authentication → Configurações → Domínios autorizados**: adicione
-   `wdgraficarapida.com.br` e `www.wdgraficarapida.com.br`. `localhost` já vem liberado.
+## Domínio wdgraficarapida.com.br (Registro.br → DNS → Editar zona)
 
-## Publicar o site (Firebase Hosting, gratuito)
+| Tipo | Nome | Valor |
+|---|---|---|
+| A | *(vazio)* | 199.36.158.100 |
+| TXT | *(vazio)* | hosting-site=wd-grafica-rapida |
+| CNAME | www | wd-grafica-rapida.web.app |
+
+Apague antes os registros antigos que apontam para o Google (`A` 142.251.x.x e `CNAME www → ghs.googlehosted.com`).
+O HTTPS é emitido sozinho pelo Firebase depois que o DNS propagar (alguns minutos a 24 h).
+
+## Publicar alterações
 
 ```bash
-npm install -g firebase-tools
-firebase login
-firebase use --add
-firebase deploy
+npx firebase-tools deploy
 ```
-
-O site fica em `https://SEU-PROJETO.web.app` e, depois do passo abaixo, em **https://wdgraficarapida.com.br**.
-
-## Ligar o domínio wdgraficarapida.com.br
-
-1. Console Firebase → **Hosting → Adicionar domínio personalizado** → `wdgraficarapida.com.br`.
-   O Firebase mostra os registros DNS (um **TXT** de verificação e registros **A**).
-2. No **Registro.br** (ou onde o domínio foi comprado) → **DNS → Editar zona** → crie exatamente os
-   registros que o Firebase mostrou, para o domínio raiz (`@`).
-3. Volte ao Firebase e clique **Verificar**. Repita o passo 1 para `www.wdgraficarapida.com.br`,
-   marcando **Redirecionar para wdgraficarapida.com.br**.
-4. A propagação do DNS e o certificado HTTPS levam de alguns minutos a 24 h.
-5. Com o domínio já funcionando, deixe o login com a cara do seu domínio:
-   - em `js/firebase-config.js`, troque `authDomain` para `"wdgraficarapida.com.br"`;
-   - no **Google Cloud Console** (mesma conta) → **APIs e serviços → Credenciais → Cliente OAuth "Web client"**
-     → **URIs de redirecionamento autorizados** → adicione `https://wdgraficarapida.com.br/__/auth/handler`;
-   - rode `firebase deploy` de novo.
-
-O site já está preparado para o domínio: link canônico, prévia ao compartilhar no WhatsApp/redes
-(`og:*`), `robots.txt` (o painel ADM não aparece no Google) e `sitemap.xml`.
 
 ## Primeiro acesso ao painel
 
-1. Abra `/admin.html` e entre com grupowdoficial@gmail.com.
-2. Aba **Produtos → Importar catálogo padrão**. A partir daí, preços e produtos são editados pelo painel
-   (você informa o preço de revenda; o site mostra × 2,5 automaticamente).
+Abra `/admin.html`, entre com grupowdoficial@gmail.com. Os produtos já estão no banco: edite o
+preço de revenda e o site mostra × 2,5 automaticamente.
 
 ## Status dos pedidos
 
