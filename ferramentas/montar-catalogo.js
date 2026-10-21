@@ -28,7 +28,8 @@ for (const c of coleta.categorias) {
   const fams = [];
   for (const slug of c.familias) {
     const f = coleta.familias[slug];
-    if (!f || !f.variantes.length || out.fams[slug]) { if (out.fams[slug]) fams.push(slug); continue; }
+    if (!f || !f.variantes.length || out.fams[slug]) { if (out.fams[slug] && !fams.includes(slug)) fams.push(slug); continue; }
+    if (fams.some(s => out.fams[s].nome === f.nome)) continue; // mesmo produto com outro endereço
     const chaves = [...new Set(f.variantes.flatMap(v => Object.keys(v.attrs)))];
     const attrs = [...ORDEM_ATTR.filter(k => chaves.includes(k)), ...chaves.filter(k => !ORDEM_ATTR.includes(k))];
     const img = fs.existsSync(path.join(RAIZ, 'img/fam', slug + '.webp')) ? `img/fam/${slug}.webp` : '';
@@ -49,11 +50,14 @@ for (const c of coleta.categorias) {
 // ---- produtos avulsos das categorias ainda não coletadas ----
 const src = fs.readFileSync(path.join(RAIZ, 'js/produtos.js'), 'utf8');
 const AVULSOS = new Function(src + '; return PRODUTOS_PADRAO;')();
-const coletadas = ['Cartões de Visita', 'Adesivos e Rótulos', 'Folhetos e Folders'];
+// categorias antigas que já vêm da coleta: só mantém os avulsos sem equivalente coletado
+const COLETADAS = { 'Cartões de Visita': 'cartao-de-visita', 'Adesivos e Rótulos': 'adesivo', 'Folhetos e Folders': 'folders-e-panfletos' };
+const MANTER = ['revista', 'rotulo-garrafa'];
 const slugCat = n => n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 for (const p of AVULSOS) {
-  if (coletadas.includes(p.cat)) continue;
-  const cs = slugCat(p.cat);
+  const coletada = COLETADAS[p.cat] && out.cats.some(c => c.slug === COLETADAS[p.cat]);
+  if (coletada && !MANTER.includes(p.id)) continue;
+  const cs = coletada ? COLETADAS[p.cat] : slugCat(p.cat);
   let cat = out.cats.find(c => c.slug === cs);
   if (!cat) { cat = { slug: cs, nome: p.cat, fams: [] }; out.cats.push(cat); }
   const [formato, ...resto] = p.spec.split(' - ');

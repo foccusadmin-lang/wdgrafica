@@ -46,6 +46,22 @@ pedido pelo WhatsApp, login com Google e painel administrativo.
 Apague antes os registros antigos que apontam para o Google (`A` 142.251.x.x e `CNAME www → ghs.googlehosted.com`).
 O HTTPS é emitido sozinho pelo Firebase depois que o DNS propagar (alguns minutos a 24 h).
 
+## Catálogo e preços
+
+O catálogo (`data/catalogo.json`) traz cada produto com todas as combinações (material, formato, cor,
+cobertura, acabamento), a tabela de quantidades e os acabamentos extras. O site mostra sempre
+**preço de referência × 2,5** (`mult` no catálogo). Para atualizar os preços:
+
+```bash
+cd ferramentas
+npm install cheerio
+node coletar.js cartao-de-visita adesivo folders-e-panfletos
+node montar-catalogo.js
+```
+
+Para começar do zero, apague `ferramentas/coleta.json` antes. Produtos novos precisam de uma foto
+em `img/fam/<produto>.webp` (sem a marca de terceiros).
+
 ## Publicar alterações
 
 ```bash
