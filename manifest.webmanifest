@@ -2,7 +2,7 @@
   "name": "Grupo WD - Gráfica Online",
   "short_name": "Grupo WD",
   "description": "Cartões de visita, adesivos, folhetos, banners e brindes. Pensou, a gente faz!",
-  "id": "/",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
