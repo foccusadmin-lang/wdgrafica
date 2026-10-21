@@ -31,7 +31,7 @@ async function famData(slug) {
 const R = slug => IDX.fams[slug];
 const visivel = slug => R(slug) && AJUSTES[slug]?.ativo !== false;
 const nomeFam = slug => AJUSTES[slug]?.nome || R(slug).n;
-const fotoFam = slug => R(slug).img || R(slug).imgAlt || 'img/sem-foto.webp';
+const fotoFam = slug => (slug && R(slug)?.img) || 'img/sem-foto.webp';
 const lista = s => IDX.listas[s];
 const famsDe = s => (lista(s)?.f || []).filter(visivel);
 
@@ -125,7 +125,7 @@ function pgHome() {
       }).join('')}
       <div class="dots">${BANNERS.map((b, i) => `<button class="${i ? '' : 'on'}" onclick="irBanner(${i})" aria-label="Banner ${i + 1}"></button>`).join('')}</div>
     </div>
-    <div class="circulos">${deps.map(d => `<a href="#/c/${d.s}"><span><img src="${esc(fotoFam(famsDe(d.s)[0]))}" alt="" loading="lazy"></span>${esc(d.n)}</a>`).join('')}</div>
+    <div class="circulos">${deps.map(d => `<a href="#/c/${d.s}"><span><img src="${esc(fotoFam(famsDe(d.s).find(s => R(s).img)))}" alt="" loading="lazy"></span>${esc(d.n)}</a>`).join('')}</div>
   </div>
   <div class="perks"><div class="wrap">
     <div class="perk"><i style="background:#e0f6fd">🚚</i><div><b>Entrega em todo Brasil</b>Envio seguro</div></div>
@@ -195,7 +195,7 @@ async function pgCategoria(slug, n) {
   if (p && p.dep.s === slug) subs = p.dep.g.flatMap(g => g.f).filter(x => famsDe(x.s).length);
   else if (p && p.grupo && !p.item) subs = p.grupo.f.filter(x => famsDe(x.s).length);
   const topo = `${migalhas(slug)}
-    <div class="banner"><div><h1>${esc(c.n)}</h1><p>${esc(t.sub)}</p></div><img src="${esc(fotoFam(fams[0]))}" alt=""></div>
+    <div class="banner"><div><h1>${esc(c.n)}</h1><p>${esc(t.sub)}</p></div><img src="${esc(fotoFam(fams.find(s => R(s).img)))}" alt=""></div>
     ${subs.length ? `<div class="subcats">${subs.map(x => `<a href="#/c/${x.s}">${esc(x.n)}</a>`).join('')}</div>` : ''}`;
   // mostra a lista já com os dados resumidos; filtros chegam quando os produtos carregam
   if (!fams.every(s => FAM[s] && !(FAM[s] instanceof Promise))) {

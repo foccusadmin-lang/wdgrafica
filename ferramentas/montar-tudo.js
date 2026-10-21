@@ -17,11 +17,14 @@ const fams = Object.fromEntries(Object.entries(coleta.fams).filter(([, f]) => f 
 // ---- figuras das opções: baixa uma vez para img/opc ----
 const OPC_DIR = path.join(RAIZ, 'img/opc');
 fs.mkdirSync(OPC_DIR, { recursive: true });
+// figuras com marca de terceiros (revisadas manualmente) não são usadas
+const BLOQ = new Set(fs.existsSync(path.join(__dirname, 'opc-bloqueadas.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'opc-bloqueadas.json'), 'utf8')) : []);
 const opcMapa = fs.existsSync(path.join(__dirname, 'opc-mapa.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'opc-mapa.json'), 'utf8')) : {};
 async function figura(url) {
   const base = url.split('?')[0];
-  if (opcMapa[base]) return opcMapa[base];
+  if (opcMapa[base]) return BLOQ.has(opcMapa[base].replace('img/opc/', '')) ? '' : opcMapa[base];
   const nome = crypto.createHash('md5').update(base).digest('hex').slice(0, 12) + '.webp';
+  if (BLOQ.has(nome)) return '';
   const destino = path.join(OPC_DIR, nome);
   if (!fs.existsSync(destino)) {
     const r = await fetch(url.replace('/366x366-', '/200x200-')).catch(() => null);
@@ -84,6 +87,8 @@ async function figura(url) {
     listas[ds] = { n: d.nome, f: todos };
     menu.push({ n: d.nome, s: ds, g: grupos });
   }
+  // produtos com foto primeiro (mantém a ordem original dentro de cada grupo)
+  for (const l of Object.values(listas)) l.f.sort((a, b) => (resumo[b].img ? 1 : 0) - (resumo[a].img ? 1 : 0));
   // produto sem foto própria: usa a foto de outro produto da mesma categoria (ou o logo)
   for (const l of Object.values(listas)) {
     const comFoto = l.f.find(s => resumo[s].img);
