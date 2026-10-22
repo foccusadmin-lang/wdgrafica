@@ -58,7 +58,8 @@ const STATUS_MP = { approved: 'aprovado', authorized: 'pendente', in_process: 'p
 exports.criarPedidoPago = onCall({ region: REGIAO, secrets: [MP_ACCESS_TOKEN], maxInstances: 10 }, async req => {
   const u = req.auth;
   if (!u || !u.token.email_verified) throw new HttpsError('unauthenticated', 'Entre com sua conta Google.');
-  const { itens = [], obs = '', metodo, cartao } = req.data || {};
+  const { itens = [], obs = '', metodo, cartao, entrega } = req.data || {};
+  const ent = entrega && entrega.tipo === 'entrega' ? { tipo: 'entrega' } : { tipo: 'retirada', local: String((await db.doc('config/loja').get()).data()?.balcao || '').slice(0, 300) };
   if (!['pix', 'cartao'].includes(metodo)) throw new HttpsError('invalid-argument', 'Forma de pagamento inválida.');
   if (!Array.isArray(itens) || !itens.length || itens.length > 50) throw new HttpsError('invalid-argument', 'Carrinho vazio.');
 
@@ -77,7 +78,7 @@ exports.criarPedidoPago = onCall({ region: REGIAO, secrets: [MP_ACCESS_TOKEN], m
     linhas.push({
       id: r.q[2], fam: it.fam, nome: ctx.nome, un: `${r.q[0].toLocaleString('pt-BR')} ${r.q[0] === 1 ? 'unidade' : 'unidades'}`,
       spec: [...Object.values(r.v.a), ...r.extras.map(x => '+ ' + x[1]), ...r.serv.map(s => '+ ' + s.nome)].join(' - '),
-      qtd: r.q[0], ex: r.extras.map(x => x[0]), sv: r.serv.map(s => s.id), q: n, preco: r.unit,
+      qtd: r.q[0], ex: r.extras.map(x => x[0]), sv: r.serv.map(s => s.id), q: n, preco: r.unit, a: r.v.a, prazo: r.v.prazo || '',
     });
   }
   const total = PRECOS.r2(linhas.reduce((s, l) => s + l.preco * l.q, 0));
@@ -85,7 +86,7 @@ exports.criarPedidoPago = onCall({ region: REGIAO, secrets: [MP_ACCESS_TOKEN], m
 
   const ref = db.collection('pedidos').doc();
   await ref.set({
-    uid: u.uid, email: u.token.email, nome: cad.nome, obs: String(obs).slice(0, 1000), itens: linhas, total, cliente: cad,
+    uid: u.uid, email: u.token.email, nome: cad.nome, obs: String(obs).slice(0, 1000), itens: linhas, total, cliente: cad, entrega: ent,
     status: 'aguardando_pagamento', pagamento: { metodo, status: 'pendente' }, criadoEm: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -108,7 +109,7 @@ exports.criarPedidoPago = onCall({ region: REGIAO, secrets: [MP_ACCESS_TOKEN], m
   await ref.update({
     'pagamento.status': status, 'pagamento.mpId': String(pg.id),
     ...(metodo === 'pix' ? { 'pagamento.copiaCola': td.qr_code || '', 'pagamento.expira': pg.date_of_expiration || '' } : {}),
-    ...(status === 'aprovado' ? { status: 'arte_analise' } : {}),
+    ...(status === 'aprovado' ? { status: 'arte_analise', 'etapas.pago': admin.firestore.FieldValue.serverTimestamp(), 'etapas.arte_analise': admin.firestore.FieldValue.serverTimestamp() } : {}),
   });
   return { pedidoId: ref.id, status, total, qrBase64: td.qr_code_base64 || '', copiaCola: td.qr_code || '' };
 });
@@ -138,7 +139,7 @@ exports.mpWebhook = onRequest({ region: REGIAO, secrets: [MP_ACCESS_TOKEN, MP_WE
       if (Math.abs((pg.transaction_amount || 0) - p.total) > 0.01) { logger.error('Valor divergente', id, pg.transaction_amount, p.total); return; }
       const status = STATUS_MP[pg.status] || 'pendente';
       const upd = { 'pagamento.status': status, 'pagamento.mpId': String(pg.id) };
-      if (status === 'aprovado' && p.status === 'aguardando_pagamento') upd.status = 'arte_analise';
+      if (status === 'aprovado' && p.status === 'aguardando_pagamento') { upd.status = 'arte_analise'; upd['etapas.pago'] = admin.firestore.FieldValue.serverTimestamp(); upd['etapas.arte_analise'] = admin.firestore.FieldValue.serverTimestamp(); }
       t.update(ref, upd);
     });
     res.status(200).send('ok');

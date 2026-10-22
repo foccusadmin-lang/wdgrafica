@@ -231,6 +231,7 @@ function renderPedidos() {
             <div class="muted">${data(p.criadoEm)} · ${esc(PAGTO[pg.metodo] || pg.metodo)} <span class="st pg-${esc(pg.status)}">${esc(PGST[pg.status] || pg.status)}</span></div></div>
           <b>${brl(p.total)}</b>
         </div>
+        <div class="muted" style="margin-top:6px">${p.entrega?.tipo === 'entrega' ? '🚚 Entrega no endereço do cliente' : '🏪 Retirada no balcão'}</div>
         ${blocoCliente(c, p)}
         <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.un || '')} — ${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${brl(i.preco * i.q)}</span></div>`).join('')}
           ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}
@@ -563,6 +564,10 @@ async function excluirProduto() {
 }
 
 /* ================= CONFIGURAÇÕES ================= */
+async function salvarBalcao() {
+  const balcao = $('cBalcao').value.trim(), horario = $('cHorario').value.trim();
+  try { await WD.salvarConfig({ mult: mult(), balcao, horario }); Object.assign(config, { balcao, horario }); toast('Balcão salvo ✔'); } catch (e) { alert(e.message); }
+}
 function renderConfig() {
   $('conteudo').innerHTML = `
     <div class="box">
@@ -570,6 +575,13 @@ function renderConfig() {
       <p class="muted" style="margin:6px 0 12px">Preço ao cliente = preço de referência × multiplicador. Vale para todos os produtos que não foram editados manualmente (os editados têm preço próprio).</p>
       <div class="row-act"><label style="font-weight:700">Multiplicador <input id="cMult" type="number" min="1" max="10" step="0.05" value="${mult()}" style="width:110px"></label>
         <button class="btn gold" id="cSalvar">Salvar</button></div>
+    </div>
+    <div class="box">
+      <h3>Balcão de retirada</h3>
+      <p class="muted" style="margin:6px 0 12px">Aparece no checkout (opção "Retirar no balcão") e nos detalhes do pedido do cliente.</p>
+      <label class="muted">Endereço<input id="cBalcao" maxlength="300" value="${esc(config.balcao || '')}" placeholder="Rua, número - bairro - cidade/UF, CEP"></label>
+      <label class="muted" style="display:block;margin-top:8px">Horário de funcionamento<textarea id="cHorario" rows="3" maxlength="300" placeholder="Segunda a sexta: 09:00 às 18:00&#10;Sábado: 09:00 às 12:00">${esc(config.horario || '')}</textarea></label>
+      <button class="btn gold" id="cBalSalvar" style="margin-top:10px">Salvar balcão</button>
     </div>
     <div class="box">
       <h3>Acesso ao painel</h3>
@@ -580,11 +592,12 @@ function renderConfig() {
       <p style="margin-top:6px">${WD.pagamentoOnline ? '✅ Ativo (Mercado Pago).' : '⏳ Ainda não ativado. Os clientes finalizam pelo WhatsApp e você marca o pagamento manualmente em cada pedido.'}</p>
       <p class="muted" style="margin-top:6px">Para ativar: plano Blaze no Firebase + credenciais do Mercado Pago (veja o LEIA-ME.md).</p>
     </div>`;
+  $('cBalSalvar').onclick = salvarBalcao;
   $('cSalvar').onclick = async () => {
     const v = parseFloat($('cMult').value);
     if (!(v >= 1 && v <= 10)) return alert('Informe um multiplicador entre 1 e 10.');
     if (!confirm(`Todos os preços do catálogo passarão a ser referência × ${String(v).replace('.', ',')}. Confirmar?`)) return;
-    try { await WD.salvarConfig({ mult: v }); config.mult = v; toast('Multiplicador salvo ✔'); render(); } catch (e) { alert(e.message); }
+    try { await WD.salvarConfig({ mult: v, balcao: config.balcao || '', horario: config.horario || '' }); config.mult = v; toast('Multiplicador salvo ✔'); render(); } catch (e) { alert(e.message); }
   };
 }
 </script>

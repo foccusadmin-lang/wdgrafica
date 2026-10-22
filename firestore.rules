@@ -21,8 +21,10 @@ service cloud.firestore {
     match /config/loja {
       allow read: if true;
       allow write: if admin()
-        && novos().keys().hasOnly(['mult'])
-        && novos().mult is number && novos().mult >= 1 && novos().mult <= 10;
+        && novos().keys().hasOnly(['mult', 'balcao', 'horario'])
+        && novos().mult is number && novos().mult >= 1 && novos().mult <= 10
+        && texto(novos().get('balcao', ''), 300)
+        && texto(novos().get('horario', ''), 300);
     }
 
     // ---------- ajustes do catálogo ----------
@@ -114,7 +116,11 @@ service cloud.firestore {
       // Pedido "combinar pelo WhatsApp": criado pelo cliente, sempre aguardando pagamento.
       // Pedidos com pagamento online são criados só pelo servidor (que recalcula os preços).
       allow create: if emailVerificado()
-        && novos().keys().hasOnly(['uid', 'email', 'nome', 'obs', 'itens', 'total', 'status', 'pagamento', 'cliente', 'criadoEm'])
+        && novos().keys().hasOnly(['uid', 'email', 'nome', 'obs', 'itens', 'total', 'status', 'pagamento', 'cliente', 'entrega', 'criadoEm'])
+        && (!('entrega' in novos()) || (novos().entrega is map
+             && novos().entrega.keys().hasOnly(['tipo', 'local'])
+             && novos().entrega.tipo in ['retirada', 'entrega']
+             && texto(novos().entrega.get('local', ''), 300)))
         && novos().uid == request.auth.uid
         && novos().email == request.auth.token.email
         && novos().status == 'aguardando_pagamento'
@@ -132,7 +138,8 @@ service cloud.firestore {
       allow update: if
         // ADM: muda o status e (pedidos via WhatsApp) marca o pagamento manualmente
         (admin()
-          && mudou().hasOnly(['status', 'pagamento'])
+          && mudou().hasOnly(['status', 'pagamento', 'etapas'])
+          && (!('etapas' in novos()) || novos().etapas is map)
           && novos().status in ['aguardando_pagamento', 'arte_analise', 'producao', 'pronto', 'finalizado', 'cancelado']
           && ((!('pagamento' in resource.data) && !('pagamento' in novos()))   // pedidos antigos
             || (novos().pagamento.diff(resource.data.pagamento).affectedKeys().hasOnly(['status'])

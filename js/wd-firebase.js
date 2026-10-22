@@ -104,8 +104,10 @@ export async function todosPedidos() {
   const snap = await getDocs(query(collection(db, "pedidos"), orderBy("criadoEm", "desc")));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-export const mudarStatus = (id, status) => updateDoc(doc(db, "pedidos", id), { status });
-export const marcarPagamento = (id, status) => updateDoc(doc(db, "pedidos", id), { "pagamento.status": status });
+// cada mudança de status grava a data da etapa (aparece na linha do tempo do cliente)
+export const mudarStatus = (id, status) => updateDoc(doc(db, "pedidos", id), { status, ["etapas." + status]: serverTimestamp() });
+export const marcarPagamento = (id, status) => updateDoc(doc(db, "pedidos", id),
+  { "pagamento.status": status, ...(status === "aprovado" ? { "etapas.pago": serverTimestamp() } : {}) });
 export const excluirPedido = id => deleteDoc(doc(db, "pedidos", id));
 
 /* ---- arquivo da arte (Firebase Storage) ---- */

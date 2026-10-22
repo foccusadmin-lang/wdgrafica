@@ -11,6 +11,8 @@ const coleta = JSON.parse(fs.readFileSync(path.join(__dirname, 'coleta-tudo.json
 const ORDEM_ATTR = ['Material', 'Formato', 'Cor', 'Enobrecimento', 'Acabamento'];
 const MULT = 2.5;
 
+const GAL = fs.existsSync(path.join(__dirname, 'galerias.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'galerias.json'), 'utf8')) : {};
+const FG = fs.existsSync(path.join(__dirname, 'fotos-galeria.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'fotos-galeria.json'), 'utf8')) : {};
 const temFoto = s => fs.existsSync(path.join(RAIZ, 'img/fam', s + '.webp'));
 const fams = Object.fromEntries(Object.entries(coleta.fams).filter(([, f]) => f && f.vars && f.vars.some(v => v.q.length)));
 
@@ -51,7 +53,13 @@ async function figura(url) {
       opc[k] = {};
       for (const [rot, url] of Object.entries(vals)) { const loc = await figura(url); if (loc) opc[k][rot] = loc; }
     }
-    const vars = f.vars.filter(v => v.q.length).map(v => ({ a: v.a, prazo: v.prazo, q: v.q, x: v.x || [] }));
+    // galeria de cada combinação: só fotos revisadas e liberadas (sem marca de terceiros)
+    const gals = GAL[slug] || [];
+    const vars = f.vars.filter(v => v.q.length).map((v, vi) => {
+      const g = [...new Set((gals[vi] || []).filter(n => FG[n] && (FG[n].s === 'ok' || FG[n].s === 'limpa') && fs.existsSync(path.join(RAIZ, 'img/g', FG[n].c + '.webp')))
+        .map(n => 'img/g/' + FG[n].c + '.webp'))];
+      return { a: v.a, prazo: v.prazo, q: v.q, x: v.x || [], ...(g.length ? { g } : {}) };
+    });
     fs.writeFileSync(path.join(RAIZ, 'data/p', slug + '.json'), JSON.stringify({ nome: f.nome, attrs, vars, opc }));
     // "a partir de": menor total entre todas as combinações
     let min = null;
