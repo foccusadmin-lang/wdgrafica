@@ -10,9 +10,10 @@
 <meta name="theme-color" content="#1d1d1f">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--gold:#c9a227;--gold-dark:#a5811a;--ink:#1d1d1f;--muted:#6b6b70;--bg:#f6f6f7;--line:#e6e6ea;--c:#00a8e1;--m:#e6007e;--y:#ffd400;--k:#2b2b2b}
+  :root{--gold:#c9a227;--gold-dark:#a5811a;--ink:#1d1d1f;--muted:#6b6b70;--bg:#f6f6f7;--line:#e6e6ea;--c:#00a8e1;--m:#e6007e;--y:#ffd400;--k:#2b2b2b;--wa:#25d366}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:Montserrat,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  a{color:inherit}
   .cmyk{height:5px;background:linear-gradient(90deg,var(--c) 0 25%,var(--m) 25% 50%,var(--y) 50% 75%,var(--k) 75%)}
   header{background:var(--ink);color:#fff}
   .head{max-width:1200px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -20,43 +21,63 @@
   .head h1{font-size:18px;flex:1}
   .head h1 small{display:block;font-size:11px;color:var(--gold);font-weight:600}
   .head a,.head button{color:#fff;background:none;border:1px solid #555;border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer;text-decoration:none}
-  main{max-width:1200px;margin:0 auto;padding:20px 16px}
+  main{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
   .tabs{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
   .tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
   .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
   .center{max-width:420px;margin:60px auto;text-align:center}
   .center img{width:120px;border-radius:50%;margin:0 auto 16px;display:block}
-  .btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:11px 20px;font:inherit;font-weight:700;cursor:pointer;background:var(--ink);color:#fff}
+  .btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--ink);color:#fff;text-decoration:none;white-space:nowrap}
   .btn.gold{background:var(--gold)} .btn.light{background:#eee;color:var(--ink)} .btn.sm{padding:6px 12px;font-size:12px}
-  .btn.red{background:var(--m)}
+  .btn.red{background:var(--m)} .btn.wa{background:var(--wa)}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
   .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
   .stat b{display:block;font-size:22px}
   .stat span{color:var(--muted);font-size:12px}
-  .ped-hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+  .ped-hd{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
   .ped-hd b{font-size:15px}
   .muted{color:var(--muted);font-size:12px}
   .itens{margin:10px 0;border-top:1px dashed var(--line);padding-top:8px}
   .itens div{padding:2px 0}
   select,input,textarea{border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13px;width:100%;background:#fff}
-  .st{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eee}
-  .st-novo{background:#e0f6fd;color:#00769e}.st-producao{background:#fff7cc;color:#8a6d00}.st-pronto{background:#e3f9e5;color:#137333}.st-entregue{background:#ececec;color:#444}.st-cancelado{background:#fde0f0;color:#a3005a}
+  textarea{resize:vertical}
+  .st{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:#eee;white-space:nowrap}
+  .st-aguardando_pagamento,.st-novo{background:#fff4e5;color:#8a4b00}.st-arte_analise{background:#e0f6fd;color:#00769e}.st-producao{background:#fff7cc;color:#8a6d00}
+  .st-pronto{background:#e3f9e5;color:#137333}.st-finalizado,.st-entregue{background:#ececec;color:#444}.st-cancelado{background:#fde0f0;color:#a3005a}
+  .pg-aprovado{background:#e3f9e5;color:#137333}.pg-pendente{background:#fff4e5;color:#8a4b00}.pg-recusado,.pg-estornado{background:#fde0f0;color:#a3005a}
   .filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .filters select,.filters input{width:auto;flex:1;min-width:150px}
-  .prod{display:grid;grid-template-columns:72px 1fr;gap:12px}
-  .prod img{width:72px;height:72px;object-fit:cover;border-radius:10px;background:#eee}
-  .fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
-  .fields label{font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:3px}
-  .fields .wide{grid-column:1/-1}
+  .cli{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;background:var(--bg);border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+  .cli .w{grid-column:1/-1}
+  .cli b{font-weight:700}
   .row-act{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-  .final{font-weight:800;color:var(--gold-dark)}
-  table{width:100%;border-collapse:collapse}
-  td,th{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);font-size:13px}
-  .tbl{overflow-x:auto}
+  .aviso{background:#fff4e5;border:1px solid #f0b46a;color:#8a4b00;border-radius:10px;padding:8px 10px;font-size:12px;margin-bottom:8px}
+  .lista-prod{display:grid;gap:8px}
+  .lp{display:grid;grid-template-columns:56px 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+  .lp img{width:56px;height:56px;object-fit:cover;border-radius:8px;background:#eee}
+  .lp h4{font-size:14px}
+  .badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;margin-left:4px;vertical-align:middle;background:#eee;color:#555}
+  .b-promo{background:#e11d48;color:#fff}.b-ed{background:#e0f6fd;color:#00769e}.b-novo{background:#e3f9e5;color:#137333}.b-off{background:#333;color:#fff}
+  .ed{display:grid;grid-template-columns:240px 1fr;gap:18px}
+  .ed-foto img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:#eee;border:1px solid var(--line)}
+  .ed label{font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .chips span{background:#ece4fb;color:#5b1fa8;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700}
+  .chips button{border:0;background:none;color:#5b1fa8;cursor:pointer;font-weight:800;margin-left:4px}
+  details.var{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff}
+  details.var summary{padding:10px 12px;cursor:pointer;font-weight:700;font-size:13px}
+  .var-bd{padding:0 12px 12px}
+  .qt{width:100%;border-collapse:collapse;margin-top:8px}
+  .qt td,.qt th{padding:4px 6px;border-bottom:1px solid var(--line);font-size:12px}
+  .qt input{padding:6px}
+  .check{display:flex!important;flex-direction:row!important;gap:6px;align-items:center;font-size:13px!important;color:var(--ink)!important}
+  .check input{width:auto}
   .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(100px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;transition:transform .25s;z-index:9}
   .toast.show{transform:translateX(-50%) translateY(0)}
-  @media (max-width:640px){ .fields{grid-template-columns:1fr 1fr} .fields label:first-child{grid-column:1/-1} .prod{grid-template-columns:1fr} .prod img{width:100%;height:160px} }
+  @media (max-width:760px){ .ed{grid-template-columns:1fr} .ed-foto{max-width:240px} .grid3{grid-template-columns:1fr 1fr} .cli{grid-template-columns:1fr} .lp{grid-template-columns:48px 1fr} .lp>div:last-child{grid-column:1/-1} }
 </style>
 </head>
 <body>
@@ -73,129 +94,172 @@
 <main id="app"><div class="center"><p class="muted">Carregando...</p></div></main>
 <div class="toast" id="toast"></div>
 
+<script src="js/precos.js"></script>
 <script type="module">
 import * as WD from './js/wd-firebase.js';
 window.WD = WD;
 const $ = id => document.getElementById(id);
 const app = $('app');
-const brl = v => (+v || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl = v => (+v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const so = s => String(s || '').replace(/\D/g, '');
 const data = t => t?.seconds ? new Date(t.seconds * 1000).toLocaleString('pt-BR') : '';
-const STATUS = { novo:'Recebido', producao:'Em produção', pronto:'Pronto / enviado', entregue:'Entregue', cancelado:'Cancelado' };
-let tt; const toast = t => { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 2000); };
+const fmtDoc = (d, t) => t === 'PJ' ? so(d).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5') : so(d).replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*/, '$1.$2.$3-$4');
+const fmtTel = t => so(t).replace(/^(\d{2})(\d{4,5})(\d{4}).*/, '($1) $2-$3');
+const fmtCep = c => so(c).replace(/^(\d{5})(\d{3}).*/, '$1-$2');
+const waCli = (tel, msg) => `https://wa.me/55${so(tel)}?text=${encodeURIComponent(msg)}`;
+const num6 = id => String(id).slice(0, 6).toUpperCase();
+const STATUS = { aguardando_pagamento: 'Aguardando pagamento', arte_analise: 'Arte em análise', producao: 'Em produção',
+  pronto: 'Pronto para envio/retirada', finalizado: 'Finalizado', cancelado: 'Cancelado' };
+const STATUS_ANTIGO = { novo: 'aguardando_pagamento', entregue: 'finalizado' };
+const stNome = s => STATUS[s] || STATUS[STATUS_ANTIGO[s]] || s;
+const PAGTO = { pix: 'PIX', cartao: 'Cartão', whatsapp: 'Combinar pelo WhatsApp' };
+const PGST = { pendente: 'Pendente', aprovado: 'Pago', recusado: 'Recusado', estornado: 'Estornado' };
+let tt; const toast = t => { $('toast').textContent = t; $('toast').classList.add('show'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.remove('show'), 2200); };
 
-let aba = 'pedidos', pedidos = [], CAT = null, FAM = {}, ajustes = {}, clientes = [], filtro = { status:'', q:'' }, filtroProd = '';
-const P = v => Math.round(v * (CAT?.mult || 2.5) * 100) / 100;
+let aba = 'pedidos', pedidos = [], CAT = null, FAM = {}, ajustes = {}, clientes = [], config = {};
+let filtro = { status: '', metodo: '', q: '' }, filtroCli = '', filtroProd = '', editando = null;
+const mult = () => config.mult || CAT?.mult || 2.5;
 
-if (!WD.configurado) {
-  app.innerHTML = `<div class="center box"><h2>Firebase não configurado</h2><p class="muted" style="margin-top:8px">Preencha o arquivo <b>js/firebase-config.js</b> com os dados do seu projeto Firebase (veja o LEIA-ME.md).</p></div>`;
-} else {
-  WD.aoMudarUsuario(u => {
-    $('btnSair').style.display = u ? 'inline-block' : 'none';
-    if (!u) {
-      app.innerHTML = `<div class="center box"><img src="img/logo.jpg" alt=""><h2>Acesso restrito</h2>
-        <p class="muted" style="margin:8px 0 18px">Entre com a conta Google administradora.</p>
-        <button class="btn gold" id="btnEntrar">Entrar com Google</button></div>`;
-      $('btnEntrar').onclick = () => WD.entrar().catch(e => alert(e.message));
-    } else if (!WD.ehAdmin(u)) {
-      app.innerHTML = `<div class="center box"><h2>Acesso negado</h2>
-        <p class="muted" style="margin:8px 0 18px">A conta <b>${esc(u.email)}</b> não tem permissão de administrador.</p>
-        <button class="btn" onclick="WD.sair()">Entrar com outra conta</button></div>`;
-    } else {
-      carregar();
-    }
-  });
-}
+WD.aoMudarUsuario(u => {
+  $('btnSair').style.display = u ? 'inline-block' : 'none';
+  if (!u) {
+    app.innerHTML = `<div class="center box"><img src="img/logo.jpg" alt=""><h2>Acesso restrito</h2>
+      <p class="muted" style="margin:8px 0 18px">Entre com a conta Google administradora.</p>
+      <button class="btn gold" id="btnEntrar">Entrar com Google</button></div>`;
+    $('btnEntrar').onclick = () => WD.entrar().catch(e => alert(e.message));
+  } else if (!WD.ehAdmin(u)) {
+    app.innerHTML = `<div class="center box"><h2>Acesso negado</h2>
+      <p class="muted" style="margin:8px 0 18px">A conta <b>${esc(u.email)}</b> não tem permissão de administrador.</p>
+      <button class="btn" onclick="WD.sair()">Entrar com outra conta</button></div>`;
+  } else carregar();
+});
 
 async function carregar() {
   app.innerHTML = '<div class="center"><p class="muted">Carregando dados...</p></div>';
   try {
-    [pedidos, CAT, ajustes, clientes] = await Promise.all([WD.todosPedidos(), fetch('data/indice.json', { cache: 'no-cache' }).then(r => r.json()), WD.lerAjustes(), WD.todosClientes()]);
-    // dados completos só dos produtos que aparecem nos pedidos (para conferir preços)
-    const usados = [...new Set(pedidos.flatMap(p => (p.itens || []).map(i => i.fam)).filter(s => s && CAT.fams[s]))];
-    await Promise.all(usados.map(async s => { FAM[s] = await fetch('data/p/' + s + '.json').then(r => r.ok ? r.json() : null).catch(() => null); }));
+    [pedidos, CAT, ajustes, clientes, config] = await Promise.all([WD.todosPedidos(), fetch('data/indice.json', { cache: 'no-cache' }).then(r => r.json()),
+      WD.lerAjustes(), WD.todosClientes(), WD.lerConfig()]);
+    // produtos criados no painel entram na lista
+    for (const [s, a] of Object.entries(ajustes)) if (a.novo && a.resumo && !CAT.fams[s]) CAT.fams[s] = { n: a.nome, img: '', p: a.resumo.p, s: a.resumo.s || '', c: a.resumo.c || 1 };
+    const usados = [...new Set(pedidos.flatMap(p => (p.itens || []).map(i => i.fam)).filter(Boolean))];
+    await Promise.all(usados.map(famData));
     render();
   } catch (e) {
-    app.innerHTML = `<div class="center box"><h2>Erro ao carregar</h2><p class="muted">${esc(e.message)}</p><p class="muted" style="margin-top:8px">Confira se as regras do Firestore (firestore.rules) foram publicadas.</p></div>`;
+    console.error(e);
+    app.innerHTML = `<div class="center box"><h2>Erro ao carregar</h2><p class="muted">${esc(e.message)}</p></div>`;
   }
+}
+// dados completos de um produto: editado no painel (preço final) ou do catálogo (referência)
+async function famData(s) {
+  if (FAM[s] !== undefined) return FAM[s];
+  const a = ajustes[s];
+  FAM[s] = (a?.editado || a?.novo) ? await WD.lerProduto(s).catch(() => null)
+    : await fetch('data/p/' + s + '.json').then(r => r.ok ? r.json() : null).catch(() => null);
+  return FAM[s];
 }
 
 function render() {
-  const abertos = pedidos.filter(p => ['novo','producao','pronto'].includes(p.status));
-  const faturado = pedidos.filter(p => p.status !== 'cancelado').reduce((s, p) => s + (+p.total || 0), 0);
+  const ativos = pedidos.filter(p => !['finalizado', 'cancelado', 'entregue'].includes(p.status));
+  const pagos = pedidos.filter(p => p.pagamento?.status === 'aprovado' && p.status !== 'cancelado').reduce((s, p) => s + (+p.total || 0), 0);
   app.innerHTML = `
     <div class="stats">
-      <div class="stat"><b>${pedidos.filter(p => p.status === 'novo').length}</b><span>Pedidos novos</span></div>
-      <div class="stat"><b>${abertos.length}</b><span>Em aberto</span></div>
-      <div class="stat"><b>${brl(faturado)}</b><span>Total em pedidos</span></div>
-      <div class="stat"><b>${clientes.length}</b><span>Clientes cadastrados</span></div>
+      <div class="stat"><b>${pedidos.filter(p => ['aguardando_pagamento', 'novo'].includes(p.status)).length}</b><span>Aguardando pagamento</span></div>
+      <div class="stat"><b>${ativos.length}</b><span>Pedidos em aberto</span></div>
+      <div class="stat"><b>${brl(pagos)}</b><span>Recebido (pagos)</span></div>
+      <div class="stat"><b>${clientes.length}</b><span>Clientes</span></div>
     </div>
     <div class="tabs">
-      ${[['pedidos','📦 Pedidos'],['produtos','🏷️ Produtos'],['clientes','👥 Clientes']].map(([k, t]) =>
+      ${[['pedidos', '📦 Pedidos'], ['clientes', '👥 Clientes'], ['produtos', '🏷️ Produtos'], ['config', '⚙️ Configurações']].map(([k, t]) =>
         `<button class="${aba === k ? 'on' : ''}" data-aba="${k}">${t}</button>`).join('')}
       <button data-recarregar>🔄 Atualizar</button>
     </div>
     <div id="conteudo"></div>`;
-  app.querySelectorAll('[data-aba]').forEach(b => b.onclick = () => { aba = b.dataset.aba; render(); });
-  app.querySelector('[data-recarregar]').onclick = carregar;
-  ({ pedidos: renderPedidos, produtos: renderProdutos, clientes: renderClientes })[aba]();
+  app.querySelectorAll('[data-aba]').forEach(b => b.onclick = () => { aba = b.dataset.aba; editando = null; render(); });
+  app.querySelector('[data-recarregar]').onclick = () => { FAM = {}; carregar(); };
+  ({ pedidos: renderPedidos, clientes: renderClientes, produtos: () => editando ? renderEditor() : renderProdutos(), config: renderConfig })[aba]();
+}
+function manterFoco(id, fn) {
+  const el = $(id); el.oninput = e => { const pos = e.target.selectionStart; fn(e.target.value); $(id).focus(); $(id).setSelectionRange(pos, pos); };
 }
 
-/* ---------- PEDIDOS ---------- */
-// O preço é calculado no navegador do cliente: confere com o catálogo atual para detectar valores alterados.
-function precoCatalogo(i) {
-  const f = FAM[i.fam]; if (!f) return null;
-  let q = null, v = null;
-  for (const x of f.vars) { const y = x.q.find(z => z[2] === i.id); if (y) { q = y; v = x; break; } }
-  if (!q) return null;
-  const ex = (v.x || []).filter(x => (i.ex || []).includes(x[0])).reduce((a, x) => a + P(x[3]), 0);
-  const sv = CAT.servicos.filter(s => (i.sv || []).includes(s.id)).reduce((a, s) => a + P(s.preco), 0);
-  return Math.round((P(q[1]) + ex + sv) * 100) / 100;
-}
+/* ================= PEDIDOS ================= */
+// O preço vem do navegador do cliente (pedidos via WhatsApp): confere com o catálogo atual.
 function conferir(p) {
-  const avisos = [];
-  let soma = 0;
+  if (p.pagamento && p.pagamento.metodo !== 'whatsapp') return []; // pedidos pagos online já são calculados pelo servidor
+  const avisos = []; let soma = 0;
   for (const i of p.itens || []) {
     const q = +i.q || 0; soma += (+i.preco || 0) * q;
     if (!Number.isInteger(q) || q < 1) avisos.push(`${i.nome}: quantidade inválida`);
-    if (!i.fam) continue; // pedido antigo, sem referência ao catálogo
-    const certo = precoCatalogo(i);
-    if (certo === null) { avisos.push(`"${i.nome}" (${i.un || ''}) não está mais no catálogo`); continue; }
-    if (Math.abs(certo - i.preco) > 0.01) avisos.push(`${i.nome} (${i.un || ''}): ${brl(i.preco)} no pedido, catálogo hoje ${brl(certo)}`);
+    if (!i.fam) continue;
+    const r = PRECOS.item({ prod: FAM[i.fam], aj: ajustes[i.fam], mult: mult(), servicos: CAT.servicos }, { sku: i.id, qtd: i.qtd, ex: i.ex, sv: i.sv });
+    if (!r) { avisos.push(`"${i.nome}" (${i.un || ''}) não está mais no catálogo`); continue; }
+    if (Math.abs(r.unit - i.preco) > 0.01) avisos.push(`${i.nome} (${i.un || ''}): ${brl(i.preco)} no pedido, catálogo hoje ${brl(r.unit)}`);
   }
   if (Math.abs(soma - p.total) > 0.01) avisos.push(`Total do pedido (${brl(p.total)}) não bate com a soma dos itens (${brl(soma)})`);
   return avisos;
 }
+function blocoCliente(c, p) {
+  if (!c) return `<div class="cli"><span class="w muted">Pedido antigo, sem ficha de cadastro. Nome: ${esc(p.nome || '—')} · ${esc(p.email || '')}</span></div>`;
+  const e = c.endereco || {};
+  return `<div class="cli">
+    <span><b>${esc(c.nome)}</b> <span class="muted">(${c.tipo === 'PJ' ? 'Pessoa jurídica' : 'Pessoa física'})</span></span>
+    <span>${c.tipo === 'PJ' ? 'CNPJ' : 'CPF'}: <b>${esc(fmtDoc(c.doc, c.tipo))}</b>${c.rg ? ` · RG: ${esc(c.rg)}` : ''}</span>
+    <span>📱 ${esc(fmtTel(c.telefone))}</span><span>✉️ ${esc(p?.email || '')}</span>
+    <span class="w">📍 ${esc(e.logradouro)}, ${esc(e.numero)}${e.complemento ? ' - ' + esc(e.complemento) : ''} · ${esc(e.bairro)} · ${esc(e.cidade)}/${esc(e.uf)} · CEP ${esc(fmtCep(e.cep))}</span>
+  </div>`;
+}
 function renderPedidos() {
-  const q = filtro.q.toLowerCase();
-  const lista = pedidos.filter(p => (!filtro.status || p.status === filtro.status) &&
-    (!q || [p.nome, p.email, p.id].join(' ').toLowerCase().includes(q)));
+  const q = norm(filtro.q);
+  const lista = pedidos.filter(p => (!filtro.status || (STATUS_ANTIGO[p.status] || p.status) === filtro.status)
+    && (!filtro.metodo || (p.pagamento?.metodo || 'whatsapp') === filtro.metodo)
+    && (!q || norm([p.nome, p.email, p.id, num6(p.id), p.cliente?.nome].join(' ')).includes(q)
+      || (so(filtro.q).length >= 3 && [p.cliente?.doc, p.cliente?.telefone].some(x => so(x).includes(so(filtro.q))))));
   $('conteudo').innerHTML = `
     <div class="filters">
       <select id="fSt"><option value="">Todos os status</option>${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filtro.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
-      <input id="fQ" placeholder="Buscar por cliente, e-mail ou nº" value="${esc(filtro.q)}">
+      <select id="fMt"><option value="">Todas as formas de pagamento</option>${Object.entries(PAGTO).map(([k, v]) => `<option value="${k}" ${filtro.metodo === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <input id="fQ" placeholder="Buscar: nº, cliente, CPF/CNPJ, telefone" value="${esc(filtro.q)}">
     </div>
-    ${lista.length ? lista.map(p => `
-      <div class="box">
+    ${lista.length ? lista.map(p => {
+      const c = p.cliente, pg = p.pagamento || { metodo: 'whatsapp', status: 'pendente' }, st = STATUS_ANTIGO[p.status] || p.status;
+      const avisos = conferir(p);
+      return `<div class="box">
         <div class="ped-hd">
-          <div><b>Pedido ${esc(p.id.slice(0, 6).toUpperCase())}</b> <span class="st st-${esc(p.status)}">${esc(STATUS[p.status] || p.status)}</span>
-            <div class="muted">${data(p.criadoEm)} · ${esc(p.nome || '—')} · ${esc(p.email)}</div></div>
+          <div><b>Pedido ${esc(num6(p.id))}</b> <span class="st st-${esc(st)}">${esc(stNome(p.status))}</span>
+            <div class="muted">${data(p.criadoEm)} · ${esc(PAGTO[pg.metodo] || pg.metodo)} <span class="st pg-${esc(pg.status)}">${esc(PGST[pg.status] || pg.status)}</span></div></div>
           <b>${brl(p.total)}</b>
         </div>
+        ${blocoCliente(c, p)}
         <div class="itens">${(p.itens || []).map(i => `<div>${esc(i.q)}x <b>${esc(i.un || '')} — ${esc(i.nome)}</b> <span class="muted">— ${esc(i.spec)} · ${brl(i.preco * i.q)}</span></div>`).join('')}
-          ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}</div>
-        ${(a => a.length ? `<div style="background:#fff4e5;border:1px solid #f0b46a;color:#8a4b00;border-radius:10px;padding:8px 10px;font-size:12px;margin-bottom:8px">⚠️ Confira os valores antes de confirmar:<br>${a.map(esc).join('<br>')}</div>` : '')(conferir(p))}
+          ${p.obs ? `<div class="muted" style="margin-top:6px">Obs.: ${esc(p.obs)}</div>` : ''}
+          ${p.arte ? `<div style="margin-top:6px">🎨 Arte enviada: <b>${esc(p.arte.nome)}</b> <button class="btn sm light" data-arte="${esc(p.arte.caminho)}">Baixar</button></div>` : ''}</div>
+        ${avisos.length ? `<div class="aviso">⚠️ Confira os valores antes de confirmar:<br>${avisos.map(esc).join('<br>')}</div>` : ''}
         <div class="row-act">
-          <select data-st="${esc(p.id)}" style="width:auto">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${p.status === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+          <select data-st="${esc(p.id)}" style="width:auto">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${st === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+          ${pg.metodo === 'whatsapp' && p.pagamento ? `<select data-pg="${esc(p.id)}" style="width:auto">${['pendente', 'aprovado', 'recusado', 'estornado'].map(k => `<option value="${k}" ${pg.status === k ? 'selected' : ''}>Pagamento: ${PGST[k]}</option>`).join('')}</select>` : ''}
+          ${c ? `<a class="btn sm wa" target="_blank" rel="noopener" href="${waCli(c.telefone, `Olá, ${c.nome.split(' ')[0]}! Aqui é do Grupo WD, sobre o seu pedido nº ${num6(p.id)}:`)}">💬 WhatsApp</a>
+            <a class="btn sm light" href="tel:+55${so(c.telefone)}">📞 Ligar</a>
+            <button class="btn sm light" data-ficha="${esc(p.uid)}">👤 Ficha do cliente</button>` : ''}
+          <span style="flex:1"></span>
           <button class="btn sm red" data-del="${esc(p.id)}">Excluir</button>
         </div>
-      </div>`).join('') : '<div class="box muted">Nenhum pedido encontrado.</div>'}`;
+      </div>`;
+    }).join('') : '<div class="box muted">Nenhum pedido encontrado.</div>'}`;
   $('fSt').onchange = e => { filtro.status = e.target.value; renderPedidos(); };
-  $('fQ').oninput = e => { filtro.q = e.target.value; const pos = e.target.selectionStart; renderPedidos(); $('fQ').focus(); $('fQ').setSelectionRange(pos, pos); };
+  $('fMt').onchange = e => { filtro.metodo = e.target.value; renderPedidos(); };
+  manterFoco('fQ', v => { filtro.q = v; renderPedidos(); });
   document.querySelectorAll('[data-st]').forEach(s => s.onchange = async () => {
     try { await WD.mudarStatus(s.dataset.st, s.value); pedidos.find(p => p.id === s.dataset.st).status = s.value; toast('Status atualizado ✔'); render(); }
+    catch (e) { alert('Não foi possível mudar o status: ' + e.message); }
+  });
+  document.querySelectorAll('[data-pg]').forEach(s => s.onchange = async () => {
+    try { await WD.marcarPagamento(s.dataset.pg, s.value); pedidos.find(p => p.id === s.dataset.pg).pagamento.status = s.value; toast('Pagamento atualizado ✔'); render(); }
     catch (e) { alert(e.message); }
   });
+  document.querySelectorAll('[data-ficha]').forEach(b => b.onclick = () => { const c = clientes.find(x => x.id === b.dataset.ficha); filtroCli = c?.cadastro?.doc || c?.email || ''; aba = 'clientes'; render(); });
+  document.querySelectorAll('[data-arte]').forEach(b => b.onclick = async () => { try { open(await WD.linkArte(b.dataset.arte), '_blank'); } catch (e) { alert(e.message); } });
   document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
     if (!confirm('Excluir este pedido definitivamente?')) return;
     try { await WD.excluirPedido(b.dataset.del); pedidos = pedidos.filter(p => p.id !== b.dataset.del); toast('Pedido excluído'); render(); }
@@ -203,64 +267,325 @@ function renderPedidos() {
   });
 }
 
-/* ---------- PRODUTOS (ajustes sobre o catálogo) ---------- */
-function renderProdutos() {
-  const t = filtroProd.toLowerCase();
-  const nomeDe = s => ajustes[s]?.nome || CAT.fams[s].n;
-  const nComb = Object.values(CAT.fams).reduce((a, f) => a + f.c, 0);
-  const vistos = new Set();
+/* ================= CLIENTES (CRM) ================= */
+function renderClientes() {
+  const q = norm(filtroCli), qd = so(filtroCli);
+  const lista = [...clientes].filter(c => {
+    if (!q) return true;
+    const cad = c.cadastro || {};
+    return norm([cad.nome, c.nome, c.email].join(' ')).includes(q) || (qd.length >= 3 && [cad.doc, cad.telefone].some(x => so(x).includes(qd)));
+  }).sort((a, b) => (b.ultimoLogin?.seconds || 0) - (a.ultimoLogin?.seconds || 0));
   $('conteudo').innerHTML = `
-    <div class="box"><b>Catálogo:</b> ${Object.keys(CAT.fams).length} produtos e ${nComb} combinações
-      · atualizado em ${new Date(CAT.geradoEm).toLocaleString('pt-BR')}<br>
-      <span class="muted">Preço no site = preço de referência × ${String(CAT.mult).replace('.', ',')}. Aqui você pode ocultar, renomear ou destacar produtos.</span></div>
-    <div class="filters"><input id="fP" placeholder="Buscar produto" value="${esc(filtroProd)}"></div>
-    ${CAT.menu.map(d => {
-      const fams = (CAT.listas[d.s]?.f || []).filter(s => !vistos.has(s) && (!t || nomeDe(s).toLowerCase().includes(t)));
-      fams.forEach(s => vistos.add(s));
-      if (!fams.length) return '';
-      return `<h3 style="margin:18px 0 8px">${esc(d.n)} <span class="muted">(${fams.length})</span></h3>` + fams.map(s => {
-        const f = CAT.fams[s], a = ajustes[s] || {};
-        return `<div class="box prod" data-slug="${esc(s)}">
-          <img src="${esc(f.img || f.imgAlt || 'img/sem-foto.webp')}" alt="" loading="lazy">
-          <div>
-            <div class="fields">
-              <label class="wide">Nome no site<input data-f="nome" value="${esc(nomeDe(s))}" placeholder="${esc(f.n)}"></label>
-            </div>
-            <div class="muted" style="margin-top:6px">${f.c} combinações · a partir de ${brl(P(f.p[1]))} / ${f.p[0]} un${f.img ? '' : ' · <b>sem foto própria</b>'}</div>
-            <div class="row-act">
-              <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="ativo" ${a.ativo !== false ? 'checked' : ''} style="width:auto"> Visível no site</label>
-              <label style="display:flex;gap:6px;align-items:center;font-weight:700"><input type="checkbox" data-f="destaque" ${a.destaque ? 'checked' : ''} style="width:auto"> Selo "Mais vendido"</label>
-              <span style="flex:1"></span>
-              <a class="btn sm light" href="./#/p/${esc(s)}" target="_blank">Ver no site</a>
-              <button class="btn sm gold" data-save>Salvar</button>
-            </div>
-          </div></div>`;
-      }).join('');
-    }).join('')}`;
-  $('fP').oninput = e => { filtroProd = e.target.value; const pos = e.target.selectionStart; renderProdutos(); $('fP').focus(); $('fP').setSelectionRange(pos, pos); };
-  document.querySelectorAll('[data-save]').forEach(b => b.onclick = () => salvarAjuste(b.closest('[data-slug]')));
+    <div class="filters"><input id="fC" placeholder="Buscar por nome, CPF, CNPJ, telefone ou e-mail" value="${esc(filtroCli)}"></div>
+    <p class="muted" style="margin-bottom:10px">${lista.length} cliente(s)</p>
+    ${lista.map(c => {
+      const cad = c.cadastro, peds = pedidos.filter(p => p.uid === c.id);
+      const gasto = peds.filter(p => p.status !== 'cancelado').reduce((s, p) => s + (+p.total || 0), 0);
+      return `<div class="box">
+        <div class="ped-hd"><div><b>${esc(cad?.nome || c.nome || 'Sem nome')}</b>
+          <div class="muted">Último acesso: ${data(c.ultimoLogin) || '—'} · ${peds.length} pedido(s) · ${brl(gasto)}</div></div>
+          ${cad ? '' : '<span class="st pg-pendente">Cadastro incompleto</span>'}</div>
+        ${cad ? blocoCliente(cad, { email: c.email }) : `<div class="cli"><span class="w">✉️ ${esc(c.email)}</span></div>`}
+        <div class="row-act">
+          ${cad ? `<a class="btn sm wa" target="_blank" rel="noopener" href="${waCli(cad.telefone, `Olá, ${cad.nome.split(' ')[0]}! Aqui é do Grupo WD.`)}">💬 WhatsApp</a>
+            <a class="btn sm light" href="tel:+55${so(cad.telefone)}">📞 Ligar</a>` : ''}
+          <a class="btn sm light" href="mailto:${esc(c.email)}">✉️ E-mail</a>
+        </div>
+        ${peds.length ? `<details style="margin-top:10px"><summary class="muted" style="cursor:pointer">Histórico de compras (${peds.length})</summary>
+          <table style="margin-top:6px"><tr><th>Pedido</th><th>Data</th><th>Status</th><th>Pagamento</th><th>Total</th></tr>
+          ${peds.map(p => `<tr><td><b>${esc(num6(p.id))}</b></td><td>${data(p.criadoEm)}</td><td><span class="st st-${esc(STATUS_ANTIGO[p.status] || p.status)}">${esc(stNome(p.status))}</span></td>
+            <td>${esc(PAGTO[p.pagamento?.metodo] || 'WhatsApp')} · ${esc(PGST[p.pagamento?.status] || 'Pendente')}</td><td>${brl(p.total)}</td></tr>`).join('')}</table></details>` : ''}
+      </div>`;
+    }).join('') || '<div class="box muted">Nenhum cliente encontrado.</div>'}`;
+  manterFoco('fC', v => { filtroCli = v; renderClientes(); });
 }
-async function salvarAjuste(box) {
-  const s = box.dataset.slug, f = { nome: CAT.fams[s].n };
-  const v = k => box.querySelector(`[data-f="${k}"]`);
-  const nome = v('nome').value.trim();
-  const dados = { ativo: v('ativo').checked, destaque: v('destaque').checked, nome: nome && nome !== f.nome ? nome : '' };
+
+/* ================= PRODUTOS ================= */
+const nomeDe = s => ajustes[s]?.nome || CAT.fams[s]?.n || s;
+const editadoOuNovo = s => ajustes[s]?.editado || ajustes[s]?.novo;
+function precoResumo(s) {
+  const f = CAT.fams[s], a = ajustes[s];
+  const cheio = editadoOuNovo(s) ? PRECOS.r2(f.p[1]) : PRECOS.r2(f.p[1] * mult());
+  const pct = PRECOS.promo(a);
+  return pct ? `<s>${brl(cheio)}</s> ${brl(cheio * (1 - pct / 100))}` : brl(cheio);
+}
+function renderProdutos() {
+  const t = norm(filtroProd);
+  const vistos = new Set();
+  const grupos = [...CAT.menu.map(d => [d.n, CAT.listas[d.s]?.f || []]), ['Criados no painel', Object.keys(ajustes).filter(s => ajustes[s].novo)]];
+  $('conteudo').innerHTML = `
+    <div class="filters"><input id="fP" placeholder="Buscar produto" value="${esc(filtroProd)}">
+      <button class="btn gold" id="btnNovo">+ Novo produto</button></div>
+    ${grupos.map(([nome, fams]) => {
+      const l = fams.filter(s => CAT.fams[s] && !vistos.has(s) && (!t || norm(nomeDe(s)).includes(t)));
+      l.forEach(s => vistos.add(s));
+      if (!l.length) return '';
+      return `<h3 style="margin:18px 0 8px">${esc(nome)} <span class="muted">(${l.length})</span></h3><div class="lista-prod">${l.map(s => {
+        const a = ajustes[s] || {}, f = CAT.fams[s];
+        return `<div class="lp"><img src="${esc(f.img || 'img/sem-foto.webp')}" ${a.foto ? `data-foto="${esc(s)}"` : ''} alt="" loading="lazy">
+          <div><h4>${esc(nomeDe(s))}
+            ${PRECOS.promo(a) ? `<span class="badge b-promo">-${PRECOS.promo(a)}%</span>` : ''}${a.novo ? '<span class="badge b-novo">novo</span>' : a.editado ? '<span class="badge b-ed">editado</span>' : ''}
+            ${a.excluido ? '<span class="badge b-off">excluído</span>' : a.ativo === false ? '<span class="badge b-off">oculto</span>' : ''}${a.destaque ? '<span class="badge">mais vendido</span>' : ''}</h4>
+            <div class="muted">${f.c} combinação(ões) · a partir de ${precoResumo(s)} / ${f.p[0]} un${f.img || a.foto ? '' : ' · sem foto'}</div></div>
+          <div class="row-act" style="margin:0"><a class="btn sm light" href="./#/p/${esc(s)}" target="_blank">Ver</a><button class="btn sm gold" data-edit="${esc(s)}">Editar</button></div></div>`;
+      }).join('')}</div>`;
+    }).join('')}`;
+  manterFoco('fP', v => { filtroProd = v; renderProdutos(); });
+  $('btnNovo').onclick = () => { editando = { slug: null }; renderEditor(); };
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => { editando = { slug: b.dataset.edit }; renderEditor(); });
+  carregarFotos();
+}
+async function carregarFotos() {
+  for (const img of document.querySelectorAll('img[data-foto]')) {
+    const f = await WD.lerFoto(img.dataset.foto).catch(() => null);
+    if (f) img.src = f;
+  }
+}
+
+// ---------- editor de produto ----------
+async function renderEditor() {
+  const s = editando.slug;
+  $('conteudo').innerHTML = '<div class="box muted">Carregando produto…</div>';
+  if (!editando.prod) {
+    if (s) {
+      const f = await famData(s);
+      if (!f) { $('conteudo').innerHTML = '<div class="box">Não foi possível carregar este produto.</div>'; return; }
+      const a = ajustes[s] || {};
+      // trabalha sempre com preço final (o catálogo guarda a referência)
+      editando.prod = { nome: nomeDe(s), desc: f.desc || '', attrs: [...(f.attrs || [])],
+        vars: f.vars.map(v => ({ a: { ...v.a }, prazo: v.prazo || '', q: v.q.map(q => [q[0], PRECOS.base(f, mult(), q[1]), q[2]]), x: (v.x || []).map(x => [x[0], x[1], x[2], PRECOS.base(f, mult(), x[3])]) })) };
+      editando.meta = { ativo: a.ativo !== false, destaque: !!a.destaque, promoPct: a.promo?.pct || 0, promoAte: a.promo?.ate ? new Date(a.promo.ate).toISOString().slice(0, 10) : '', deps: [...(a.deps || [])] };
+      editando.foto = a.foto ? await WD.lerFoto(s).catch(() => null) : null;
+    } else {
+      editando.prod = { nome: '', desc: '', attrs: ['Formato', 'Material'], vars: [{ a: { Formato: '', Material: '' }, prazo: '3 dias úteis + frete', q: [[100, 0, null]], x: [] }] };
+      editando.meta = { ativo: true, destaque: false, promoPct: 0, promoAte: '', deps: [] };
+      editando.foto = null;
+    }
+    editando.tabelaMudou = !s;
+  }
+  const p = editando.prod, m = editando.meta;
+  const catalogoImg = s && CAT.fams[s]?.img;
+  const listas = Object.entries(CAT.listas).map(([k, v]) => [k, v.n]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  $('conteudo').innerHTML = `
+    <div class="row-act" style="margin:0 0 12px"><button class="btn sm light" id="voltar">← Voltar à lista</button>
+      <b style="font-size:16px">${s ? 'Editar produto' : 'Novo produto'}</b>${s ? `<span class="muted">código: ${esc(s)}</span>` : ''}</div>
+    <div class="box ed">
+      <div class="ed-foto">
+        <img id="fotoPrev" src="${esc(editando.foto || catalogoImg || 'img/sem-foto.webp')}" alt="">
+        <label style="margin-top:8px">Trocar foto<input type="file" id="fotoArq" accept="image/*"></label>
+        ${editando.foto ? '<button class="btn sm light" id="fotoRm" style="margin-top:6px">Remover foto enviada</button>' : ''}
+        <p class="muted" style="margin-top:6px">A foto é reduzida automaticamente (800×800).</p>
+      </div>
+      <div style="display:grid;gap:10px">
+        <label>Nome do produto<input id="eNome" value="${esc(p.nome)}" maxlength="120"></label>
+        <label>Descrição (aparece na página do produto)<textarea id="eDesc" rows="4" maxlength="5000">${esc(p.desc)}</textarea></label>
+        <div class="grid3">
+          <label class="check"><input type="checkbox" id="eAtivo" ${m.ativo ? 'checked' : ''}> Visível no site</label>
+          <label class="check"><input type="checkbox" id="eDest" ${m.destaque ? 'checked' : ''}> Selo "Mais vendido"</label>
+        </div>
+        <div class="grid2">
+          <label>Promoção (% de desconto)<input id="ePct" type="number" min="0" max="90" step="1" value="${m.promoPct || ''}" placeholder="0 = sem promoção"></label>
+          <label>Promoção válida até (opcional)<input id="eAte" type="date" value="${esc(m.promoAte)}"></label>
+        </div>
+        <label>Mostrar também nas categorias
+          <input id="eCat" list="listaCats" placeholder="Digite e escolha uma categoria">
+          <datalist id="listaCats">${listas.map(([k, n]) => `<option value="${esc(n)} [${esc(k)}]">`).join('')}</datalist>
+          <div class="chips">${m.deps.map((d, i) => `<span>${esc(CAT.listas[d]?.n || d)}<button data-rmcat="${i}">×</button></span>`).join('') || (s ? '<span style="background:#eee;color:#555">mantém as categorias atuais</span>' : '')}</div>
+        </label>
+      </div>
+    </div>
+    <div class="box">
+      <div class="ped-hd"><div><b>Combinações e tabela de preços (valores finais ao cliente)</b>
+        <div class="muted">${p.vars.length} combinação(ões). Atributos: ${esc(p.attrs.join(', '))}</div></div>
+        <div class="row-act" style="margin:0">
+          <input id="reaj" type="number" step="0.1" placeholder="% reajuste" style="width:120px">
+          <button class="btn sm light" id="btnReaj">Aplicar em todos</button>
+          <button class="btn sm light" id="btnAddVar">+ Combinação</button></div></div>
+      <label style="margin:10px 0;display:block" class="muted">Atributos (separados por vírgula)<input id="eAttrs" value="${esc(p.attrs.join(', '))}"></label>
+      <div id="vars">${p.vars.map((v, vi) => `<details class="var" ${p.vars.length <= 3 ? 'open' : ''}>
+        <summary>${esc(Object.values(v.a).filter(Boolean).join(' · ') || 'Nova combinação')} — ${v.q.length} quantidade(s)</summary>
+        <div class="var-bd">
+          <div class="grid3">${p.attrs.map(k => `<label>${esc(k)}<input data-va="${vi}" data-k="${esc(k)}" value="${esc(v.a[k] || '')}"></label>`).join('')}
+            <label>Prazo<input data-vp="${vi}" value="${esc(v.prazo || '')}"></label></div>
+          <table class="qt"><tr><th>Quantidade</th><th>Preço total (R$)</th><th>Por unidade</th><th></th></tr>
+            ${v.q.map((q, qi) => `<tr><td><input type="number" min="1" data-qq="${vi}:${qi}" value="${q[0]}"></td>
+              <td><input type="number" min="0" step="0.01" data-qp="${vi}:${qi}" value="${q[1]}"></td>
+              <td class="muted">${q[0] ? brl(q[1] / q[0]) : '—'}</td><td><button class="btn sm light" data-rmq="${vi}:${qi}">×</button></td></tr>`).join('')}</table>
+          ${v.x.length ? `<p class="muted" style="margin-top:8px">Acabamentos extras</p><table class="qt">${v.x.map((x, xi) => `<tr><td>${esc(x[1])}</td><td>+${x[2] || 0} dia(s)</td>
+            <td><input type="number" min="0" step="0.01" data-xp="${vi}:${xi}" value="${x[3]}"></td></tr>`).join('')}</table>` : ''}
+          <div class="row-act"><button class="btn sm light" data-addq="${vi}">+ Quantidade</button>
+            <button class="btn sm light" data-dupv="${vi}">Duplicar combinação</button>
+            ${p.vars.length > 1 ? `<button class="btn sm red" data-rmv="${vi}">Remover combinação</button>` : ''}</div>
+        </div></details>`).join('')}</div>
+    </div>
+    <div class="row-act">
+      <button class="btn gold" id="btnSalvar">💾 Salvar produto</button>
+      ${s && ajustes[s]?.editado ? '<button class="btn light" id="btnRestaurar">Restaurar preços e combinações originais</button>' : ''}
+      <span style="flex:1"></span>
+      ${s ? '<button class="btn red" id="btnExcluir">Excluir produto</button>' : ''}
+    </div>`;
+  // ---- eventos ----
+  const lerCampos = () => {
+    p.nome = $('eNome').value.trim(); p.desc = $('eDesc').value;
+    m.ativo = $('eAtivo').checked; m.destaque = $('eDest').checked;
+    m.promoPct = Math.max(0, Math.min(90, +$('ePct').value || 0)); m.promoAte = $('eAte').value;
+  };
+  const marcar = () => { editando.tabelaMudou = true; };
+  $('voltar').onclick = () => { editando = null; renderProdutos(); };
+  $('fotoArq').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { editando.foto = await reduzirFoto(f); editando.fotoMudou = true; $('fotoPrev').src = editando.foto; toast('Foto pronta — clique em Salvar'); }
+    catch (x) { alert('Não foi possível ler a imagem.'); }
+  };
+  if ($('fotoRm')) $('fotoRm').onclick = () => { lerCampos(); editando.foto = null; editando.fotoMudou = true; renderEditor(); };
+  $('eCat').onchange = e => {
+    const k = (e.target.value.match(/\[([^\]]+)\]$/) || [])[1];
+    if (k && CAT.listas[k] && !m.deps.includes(k)) { lerCampos(); m.deps.push(k); renderEditor(); }
+  };
+  document.querySelectorAll('[data-rmcat]').forEach(b => b.onclick = () => { lerCampos(); m.deps.splice(+b.dataset.rmcat, 1); renderEditor(); });
+  $('eAttrs').onchange = e => {
+    lerCampos(); marcar();
+    p.attrs = e.target.value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 10);
+    p.vars.forEach(v => { const a = {}; p.attrs.forEach(k => { a[k] = v.a[k] || ''; }); v.a = a; });
+    renderEditor();
+  };
+  document.querySelectorAll('[data-va]').forEach(i => i.oninput = () => { p.vars[+i.dataset.va].a[i.dataset.k] = i.value; marcar(); });
+  document.querySelectorAll('[data-vp]').forEach(i => i.oninput = () => { p.vars[+i.dataset.vp].prazo = i.value; marcar(); });
+  document.querySelectorAll('[data-qq]').forEach(i => i.oninput = () => { const [a, b] = i.dataset.qq.split(':').map(Number); p.vars[a].q[b][0] = parseInt(i.value, 10) || 0; marcar(); });
+  document.querySelectorAll('[data-qp]').forEach(i => i.oninput = () => { const [a, b] = i.dataset.qp.split(':').map(Number); p.vars[a].q[b][1] = PRECOS.r2(parseFloat(i.value) || 0); marcar(); });
+  document.querySelectorAll('[data-xp]').forEach(i => i.oninput = () => { const [a, b] = i.dataset.xp.split(':').map(Number); p.vars[a].x[b][3] = PRECOS.r2(parseFloat(i.value) || 0); marcar(); });
+  document.querySelectorAll('[data-addq]').forEach(b => b.onclick = () => { lerCampos(); const v = p.vars[+b.dataset.addq]; const u = v.q[v.q.length - 1]; v.q.push([u ? u[0] * 2 : 100, u ? u[1] : 0, null]); marcar(); renderEditor(); });
+  document.querySelectorAll('[data-rmq]').forEach(b => b.onclick = () => { lerCampos(); const [a, c] = b.dataset.rmq.split(':').map(Number); if (p.vars[a].q.length > 1) p.vars[a].q.splice(c, 1); marcar(); renderEditor(); });
+  document.querySelectorAll('[data-dupv]').forEach(b => b.onclick = () => { lerCampos(); const v = p.vars[+b.dataset.dupv]; p.vars.splice(+b.dataset.dupv + 1, 0, { a: { ...v.a }, prazo: v.prazo, q: v.q.map(q => [q[0], q[1], null]), x: v.x.map(x => [...x]) }); marcar(); renderEditor(); });
+  document.querySelectorAll('[data-rmv]').forEach(b => b.onclick = () => { if (!confirm('Remover esta combinação?')) return; lerCampos(); p.vars.splice(+b.dataset.rmv, 1); marcar(); renderEditor(); });
+  $('btnAddVar').onclick = () => { lerCampos(); const a = {}; p.attrs.forEach(k => { a[k] = ''; }); p.vars.push({ a, prazo: p.vars[0]?.prazo || '', q: [[100, 0, null]], x: [] }); marcar(); renderEditor(); };
+  $('btnReaj').onclick = () => {
+    const pct = parseFloat($('reaj').value); if (!pct) return;
+    if (!confirm(`Aplicar ${pct > 0 ? '+' : ''}${pct}% em todos os preços deste produto?`)) return;
+    lerCampos(); p.vars.forEach(v => { v.q.forEach(q => { q[1] = PRECOS.r2(q[1] * (1 + pct / 100)); }); v.x.forEach(x => { x[3] = PRECOS.r2(x[3] * (1 + pct / 100)); }); });
+    marcar(); renderEditor();
+  };
+  $('btnSalvar').onclick = () => { lerCampos(); salvarProduto(); };
+  if ($('btnRestaurar')) $('btnRestaurar').onclick = restaurarProduto;
+  if ($('btnExcluir')) $('btnExcluir').onclick = excluirProduto;
+}
+function reduzirFoto(arquivo) {
+  return new Promise((ok, erro) => {
+    const img = new Image();
+    img.onload = () => {
+      const lado = 800, c = document.createElement('canvas');
+      c.width = lado; c.height = lado;
+      const g = c.getContext('2d'); g.fillStyle = '#fafafa'; g.fillRect(0, 0, lado, lado);
+      const k = Math.min(lado / img.width, lado / img.height), w = img.width * k, h = img.height * k;
+      g.drawImage(img, (lado - w) / 2, (lado - h) / 2, w, h);
+      let q = 0.85, url = c.toDataURL('image/webp', q);
+      while (url.length > 600000 && q > 0.4) { q -= 0.1; url = c.toDataURL('image/webp', q); }
+      if (!url.startsWith('data:image/webp')) url = c.toDataURL('image/jpeg', 0.8);
+      URL.revokeObjectURL(img.src); ok(url);
+    };
+    img.onerror = erro;
+    img.src = URL.createObjectURL(arquivo);
+  });
+}
+const slugify = t => norm(t).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80);
+async function salvarProduto() {
+  const p = editando.prod, m = editando.meta;
+  let s = editando.slug;
+  if (!p.nome) return alert('Informe o nome do produto.');
+  if (!p.attrs.length) return alert('Informe ao menos um atributo (ex.: Formato).');
+  if (!editando.slug && !m.deps.length) return alert('Escolha ao menos uma categoria para o produto aparecer no site.');
+  for (const v of p.vars) {
+    if (!v.q.length) return alert('Cada combinação precisa de ao menos uma quantidade.');
+    for (const q of v.q) if (!(q[0] > 0) || !(q[1] > 0)) return alert('Confira as quantidades e preços: todos precisam ser maiores que zero.');
+    if (new Set(v.q.map(q => q[0])).size !== v.q.length) return alert('Há quantidades repetidas na mesma combinação.');
+  }
+  if (!s) {
+    s = slugify(p.nome); let n = 2; const base = s;
+    while (CAT.fams[s] || ajustes[s]) s = `${base}-${n++}`;
+    if (!s) return alert('Nome inválido.');
+  }
+  const novo = !editando.slug || ajustes[s]?.novo;
+  const a0 = ajustes[s] || {};
+  // códigos (sku) para as linhas novas
+  let k = 0; p.vars.forEach(v => v.q.forEach(q => { if (q[2] == null) q[2] = `n${Date.now().toString(36)}${k++}`; }));
+  const aj = { ativo: m.ativo, destaque: m.destaque, nome: novo || p.nome !== CAT.fams[s]?.n ? p.nome : '' };
+  if (m.promoPct > 0) aj.promo = { pct: m.promoPct, ...(m.promoAte ? { ate: new Date(m.promoAte + 'T23:59:59').getTime() } : {}) };
+  if (m.deps.length) aj.deps = m.deps;
+  if (editando.foto) aj.foto = Date.now();
+  const gravarTabela = editando.tabelaMudou || novo || a0.editado;
+  if (gravarTabela) {
+    let min = null;
+    p.vars.forEach((v, vi) => v.q.forEach(q => { if (!min || q[1] < min.q[1]) min = { vi, q, v }; }));
+    aj[novo ? 'novo' : 'editado'] = true;
+    aj.resumo = { p: [min.q[0], min.q[1], min.vi], c: p.vars.length,
+      s: [min.v.a.Formato, min.v.a.Cor, min.v.a.Acabamento].filter(Boolean).join(' - ') || Object.values(min.v.a).filter(Boolean).slice(0, 2).join(' - ') };
+  }
   try {
-    if (dados.ativo && !dados.destaque && !dados.nome) { await WD.removerAjuste(s); delete ajustes[s]; }
-    else { await WD.salvarAjuste(s, dados); ajustes[s] = dados; }
+    if (gravarTabela) await WD.salvarProduto(s, { nome: p.nome, desc: p.desc, attrs: p.attrs, vars: p.vars });
+    else if (p.desc && p.desc !== (FAM[s]?.desc || '')) {
+      // só a descrição mudou num produto do catálogo: grava a tabela atual como editada
+      await WD.salvarProduto(s, { nome: p.nome, desc: p.desc, attrs: p.attrs, vars: p.vars });
+      aj.editado = true; aj.resumo = { p: [p.vars[0].q[0][0], p.vars[0].q[0][1], 0], c: p.vars.length, s: CAT.fams[s]?.s || '' };
+    }
+    if (editando.fotoMudou) { if (editando.foto) await WD.salvarFoto(s, editando.foto); else await WD.removerFoto(s); }
+    const vazio = aj.ativo && !aj.destaque && !aj.nome && !aj.promo && !aj.deps && !aj.foto && !aj.editado && !aj.novo;
+    if (vazio) { await WD.removerAjuste(s); delete ajustes[s]; } else { await WD.salvarAjuste(s, aj); ajustes[s] = aj; }
+    if (aj.novo) CAT.fams[s] = { n: p.nome, img: '', p: aj.resumo.p, s: aj.resumo.s, c: aj.resumo.c };
+    delete FAM[s];
     toast('Produto salvo ✔');
+    editando = { slug: s }; renderEditor();
+  } catch (e) { console.error(e); alert('Não foi possível salvar: ' + e.message); }
+}
+async function restaurarProduto() {
+  const s = editando.slug;
+  if (!confirm('Voltar às combinações e preços originais do catálogo? As alterações de tabela serão perdidas.')) return;
+  try {
+    await WD.removerProduto(s);
+    const a = { ...ajustes[s] }; delete a.editado; delete a.resumo;
+    if (a.ativo !== false && !a.destaque && !a.nome && !a.promo && !a.deps && !a.foto) { await WD.removerAjuste(s); delete ajustes[s]; }
+    else { await WD.salvarAjuste(s, a); ajustes[s] = a; }
+    delete FAM[s]; toast('Produto restaurado ✔'); editando = { slug: s }; renderEditor();
+  } catch (e) { alert(e.message); }
+}
+async function excluirProduto() {
+  const s = editando.slug;
+  if (!confirm(`Excluir "${nomeDe(s)}" do site?`)) return;
+  try {
+    if (ajustes[s]?.novo) {
+      await Promise.all([WD.removerProduto(s), WD.removerFoto(s).catch(() => {}), WD.removerAjuste(s)]);
+      delete ajustes[s]; delete CAT.fams[s];
+    } else {
+      const a = { ...(ajustes[s] || {}), excluido: true, ativo: false };
+      await WD.salvarAjuste(s, a); ajustes[s] = a;
+    }
+    toast('Produto excluído'); editando = null; renderProdutos();
   } catch (e) { alert(e.message); }
 }
 
-/* ---------- CLIENTES ---------- */
-function renderClientes() {
-  const qtd = uid => pedidos.filter(p => p.uid === uid).length;
-  const lista = [...clientes].sort((a, b) => (b.ultimoLogin?.seconds || 0) - (a.ultimoLogin?.seconds || 0));
-  $('conteudo').innerHTML = `<div class="box tbl"><table>
-    <tr><th>Cliente</th><th>E-mail</th><th>Pedidos</th><th>Último acesso</th></tr>
-    ${lista.map(c => `<tr><td>${esc(c.nome || '—')}</td><td>${esc(c.email)}</td><td>${qtd(c.id)}</td><td>${data(c.ultimoLogin)}</td></tr>`).join('') ||
-      '<tr><td colspan="4" class="muted">Nenhum cliente ainda.</td></tr>'}
-  </table></div>`;
+/* ================= CONFIGURAÇÕES ================= */
+function renderConfig() {
+  $('conteudo').innerHTML = `
+    <div class="box">
+      <h3>Preço dos produtos do catálogo</h3>
+      <p class="muted" style="margin:6px 0 12px">Preço ao cliente = preço de referência × multiplicador. Vale para todos os produtos que não foram editados manualmente (os editados têm preço próprio).</p>
+      <div class="row-act"><label style="font-weight:700">Multiplicador <input id="cMult" type="number" min="1" max="10" step="0.05" value="${mult()}" style="width:110px"></label>
+        <button class="btn gold" id="cSalvar">Salvar</button></div>
+    </div>
+    <div class="box">
+      <h3>Acesso ao painel</h3>
+      <p class="muted" style="margin-top:6px">${WD.ADMIN_EMAILS.map(esc).join(' · ')}</p>
+    </div>
+    <div class="box">
+      <h3>Pagamento online (PIX e cartão)</h3>
+      <p style="margin-top:6px">${WD.pagamentoOnline ? '✅ Ativo (Mercado Pago).' : '⏳ Ainda não ativado. Os clientes finalizam pelo WhatsApp e você marca o pagamento manualmente em cada pedido.'}</p>
+      <p class="muted" style="margin-top:6px">Para ativar: plano Blaze no Firebase + credenciais do Mercado Pago (veja o LEIA-ME.md).</p>
+    </div>`;
+  $('cSalvar').onclick = async () => {
+    const v = parseFloat($('cMult').value);
+    if (!(v >= 1 && v <= 10)) return alert('Informe um multiplicador entre 1 e 10.');
+    if (!confirm(`Todos os preços do catálogo passarão a ser referência × ${String(v).replace('.', ',')}. Confirmar?`)) return;
+    try { await WD.salvarConfig({ mult: v }); config.mult = v; toast('Multiplicador salvo ✔'); render(); } catch (e) { alert(e.message); }
+  };
 }
 </script>
 </body>

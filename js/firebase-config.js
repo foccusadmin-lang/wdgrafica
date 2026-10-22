@@ -1,5 +1,5 @@
 // Configuração do projeto Firebase "wd-grafica-rapida".
-// Esses valores são públicos por natureza; a segurança fica nas regras (firestore.rules).
+// Esses valores são públicos por natureza; a segurança fica nas regras (firestore.rules / storage.rules).
 export const firebaseConfig = {
   apiKey: "AIzaSyA_6NgIEP8amAeHuTMTPtfASPrV1F8jzfY",
   authDomain: "wd-grafica-rapida.firebaseapp.com",
@@ -10,8 +10,16 @@ export const firebaseConfig = {
 };
 
 // Depois que o site estiver no ar em wdgraficarapida.com.br (Firebase Hosting),
-// troque authDomain para "wdgraficarapida.com.br" — a janela de login passa a mostrar
-// o seu domínio em vez de "*.firebaseapp.com" (veja LEIA-ME.md).
+// troque authDomain para "wdgraficarapida.com.br" (veja LEIA-ME.md).
 
-// Único e-mail com acesso ao painel administrativo.
-export const ADMIN_EMAIL = "grupowdoficial@gmail.com";
+// Contas com acesso ao painel administrativo (também conferidas nas regras do banco).
+export const ADMIN_EMAILS = ["wdgraficarapidacv@gmail.com", "grupowdoficial@gmail.com"];
+
+// ---- Pagamento online (Mercado Pago) ----
+// Fica desligado até: plano Blaze ativo + credenciais do Mercado Pago + funções publicadas (veja LEIA-ME.md).
+// A Public Key é pública (começa com APP_USR- ou TEST-); o Access Token NUNCA vai aqui — ele fica como segredo no servidor.
+export const PAGAMENTO_ONLINE = false;
+export const MP_PUBLIC_KEY = "";
+
+// Envio do arquivo da arte junto com o pedido (usa o Firebase Storage, disponível no plano Blaze).
+export const UPLOAD_ARTE = false;

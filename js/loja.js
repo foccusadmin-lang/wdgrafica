@@ -9,11 +9,26 @@ const waUrl = msg => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 let IDX = null;            // data/indice.json: menu, categorias, resumo dos produtos
-const FAM = {};            // data/p/<produto>.json carregados
+const FAM = {};            // dados completos dos produtos carregados (catálogo ou editados no painel)
 let AJUSTES = {};          // ajustes do ADM (Firestore)
 let MULT = 2.5;
-const P = v => Math.round(v * MULT * 100) / 100;   // preço final = referência × multiplicador
 const PAI = {};            // categoria -> { dep, grupo }
+const FOTOS = {};          // fotos enviadas pelo painel (cache)
+const wdPronto = new Promise(ok => window.WD ? ok() : addEventListener('wd-pronto', ok, { once: true }));
+
+/* ---------- preços (regras em js/precos.js, as mesmas do servidor) ---------- */
+const ctxPreco = slug => ({ prod: FAM[slug], aj: AJUSTES[slug], mult: MULT, servicos: IDX.servicos });
+const precoLinha = (slug, total) => PRECOS.linha(FAM[slug] || {}, AJUSTES[slug], MULT, total);
+const P = v => PRECOS.r2(v * MULT);   // serviços e referências do catálogo
+// preço "a partir de" para a vitrine (resumo do produto editado ou referência do catálogo)
+function precoVitrine(slug, t) {
+  const aj = AJUSTES[slug];
+  const editado = aj?.editado || aj?.novo;
+  const cheio = editado ? PRECOS.r2(t) : P(t);
+  const pct = PRECOS.promo(aj);
+  return { cheio, final: PRECOS.r2(cheio * (1 - pct / 100)), pct };
+}
+const htmlPreco = p => p.pct ? `<s>${brl(p.cheio)}</s> ${brl(p.final)}` : brl(p.final);
 
 /* ---------- dados ---------- */
 async function carregarIndice() {
@@ -24,14 +39,55 @@ async function carregarIndice() {
     d.g.forEach(g => { if (g.s) PAI[g.s] = { dep: d, grupo: g }; g.f.forEach(x => { PAI[x.s] = { dep: d, grupo: g, item: x }; }); });
   });
 }
+// ajustes e configuração do painel (espera no máximo 3 s para não travar a vitrine)
+async function carregarAjustes() {
+  const tempo = new Promise(ok => setTimeout(() => ok(null), 3000));
+  const dados = await Promise.race([tempo, wdPronto.then(() => Promise.all([WD.lerAjustes(), WD.lerConfig()])).catch(() => null)]);
+  if (!dados) return;
+  AJUSTES = dados[0] || {};
+  if (dados[1]?.mult) MULT = dados[1].mult;
+}
+// incorpora produtos novos e categorias extras criados no painel
+function aplicarAjustes() {
+  for (const [slug, aj] of Object.entries(AJUSTES)) {
+    if (aj.novo && aj.resumo && !aj.excluido) {
+      IDX.fams[slug] = { n: aj.nome, img: '', p: aj.resumo.p, s: aj.resumo.s || '', c: aj.resumo.c || 1, t: aj.resumo.t || '' };
+    } else if (aj.editado && aj.resumo && IDX.fams[slug]) {
+      IDX.fams[slug] = { ...IDX.fams[slug], p: aj.resumo.p, s: aj.resumo.s || IDX.fams[slug].s };
+    }
+    for (const d of aj.deps || []) {
+      if (!IDX.listas[d] || IDX.listas[d].f.includes(slug)) continue;
+      IDX.listas[d].f.unshift(slug);
+      const dep = PAI[d]?.dep?.s;
+      if (dep && dep !== d && !IDX.listas[dep].f.includes(slug)) IDX.listas[dep].f.unshift(slug);
+    }
+  }
+}
 async function famData(slug) {
-  if (!FAM[slug]) FAM[slug] = fetch(`data/p/${slug}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!FAM[slug]) {
+    const aj = AJUSTES[slug];
+    FAM[slug] = (aj?.editado || aj?.novo)
+      ? wdPronto.then(() => WD.lerProduto(slug)).catch(() => null)
+      : fetch(`data/p/${slug}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+  }
   return FAM[slug];
 }
 const R = slug => IDX.fams[slug];
-const visivel = slug => R(slug) && AJUSTES[slug]?.ativo !== false;
+const visivel = slug => R(slug) && AJUSTES[slug]?.ativo !== false && !AJUSTES[slug]?.excluido;
 const nomeFam = slug => AJUSTES[slug]?.nome || R(slug).n;
-const fotoFam = slug => (slug && R(slug)?.img) || 'img/sem-foto.webp';
+const fotoFam = slug => (slug && (FOTOS[slug] || R(slug)?.img)) || 'img/sem-foto.webp';
+// atributo para carregar a foto enviada pelo painel depois de desenhar a página
+const attrFoto = slug => AJUSTES[slug]?.foto && !FOTOS[slug] ? ` data-foto="${slug}"` : '';
+async function carregarFotos() {
+  const imgs = [...document.querySelectorAll('img[data-foto]')];
+  if (!imgs.length) return;
+  await wdPronto;
+  for (const slug of [...new Set(imgs.map(i => i.dataset.foto))]) {
+    if (FOTOS[slug] === undefined) FOTOS[slug] = await WD.lerFoto(slug).catch(() => null);
+    if (FOTOS[slug]) document.querySelectorAll(`img[data-foto="${slug}"]`).forEach(i => { i.src = FOTOS[slug]; i.removeAttribute('data-foto'); });
+  }
+}
+new MutationObserver(() => carregarFotos()).observe(document.documentElement, { subtree: true, childList: true });
 const lista = s => IDX.listas[s];
 const famsDe = s => (lista(s)?.f || []).filter(visivel);
 
@@ -88,13 +144,14 @@ function marcarNav(s) {
 function card(slug, alvo) {
   const r = R(slug);
   const p = alvo || { q: r.p[0], t: r.p[1], vi: r.p[2], s: r.s };
-  const tag = AJUSTES[slug]?.destaque ? '<span class="tag">Mais vendido</span>' : '';
+  const pr = precoVitrine(slug, p.t);
+  const tag = pr.pct ? `<span class="tag promo">-${pr.pct}%</span>` : AJUSTES[slug]?.destaque ? '<span class="tag">Mais vendido</span>' : '';
   return `<a class="card" href="#/p/${slug}?v=${p.vi}&q=${p.q}">
-    <div class="ph"><img src="${esc(fotoFam(slug))}" alt="${esc(nomeFam(slug))}" loading="lazy">${tag}</div>
+    <div class="ph"><img src="${esc(fotoFam(slug))}"${attrFoto(slug)} alt="${esc(nomeFam(slug))}" loading="lazy">${tag}</div>
     <div class="bd">
       <h3>${esc(nomeFam(slug))}</h3>
       <div class="spec">${esc(p.s)}</div>
-      <div class="price"><small>a partir de</small> ${brl(P(p.t))} <small>/ ${num(p.q)} un</small></div>
+      <div class="price"><small>a partir de</small> ${htmlPreco(pr)} <small>/ ${num(p.q)} un</small></div>
     </div></a>`;
 }
 
@@ -310,13 +367,12 @@ async function pgProduto(slug, params, n) {
 }
 
 function precoSel() {
-  const f = FAM[sel.slug], v = f.vars[sel.vi];
-  const q = v.q.find(x => x[0] === sel.qtd) || v.q[0];
-  const extras = (v.x || []).filter(x => sel.extras.has(x[0]));
-  const serv = IDX.servicos.filter(s => sel.serv.has(s.id));
-  const unit = P(q[1]) + extras.reduce((a, x) => a + P(x[3]), 0) + serv.reduce((a, s) => a + P(s.preco), 0);
-  const dias = extras.reduce((a, x) => a + (x[2] || 0), 0);
-  return { f, v, q, extras, serv, unit: Math.round(unit * 100) / 100, total: Math.round(unit * sel.n * 100) / 100, dias };
+  const f = FAM[sel.slug], v0 = f.vars[sel.vi];
+  const q0 = v0.q.find(x => x[0] === sel.qtd) || v0.q[0];
+  const r = PRECOS.item(ctxPreco(sel.slug), { sku: q0[2], vi: sel.vi, qtd: q0[0], ex: [...sel.extras], sv: [...sel.serv] });
+  const dias = r.extras.reduce((a, x) => a + (x[2] || 0), 0);
+  return { f, v: r.v, q: r.q, extras: r.extras, serv: r.serv, unit: r.unit, cheio: r.cheio, pct: r.pct,
+    total: PRECOS.r2(r.unit * sel.n), totalCheio: PRECOS.r2(r.cheio * sel.n), dias };
 }
 
 // figuras das opções: foto (papel, acabamento), cor (círculos CMYK) e formato (proporção)
@@ -335,7 +391,8 @@ function figuraFormato(val) {
   return `<svg viewBox="0 0 60 60" class="fig-fmt"><rect x="${(60 - w) / 2}" y="${(60 - h) / 2}" width="${w}" height="${h}" fill="none" stroke="#9a9ca3" stroke-dasharray="3 2"/></svg>`;
 }
 function desenharProduto() {
-  const { f, v, q, extras, serv, unit, total, dias } = precoSel();
+  const { f, v, q, extras, serv, unit, total, totalCheio, pct, dias } = precoSel();
+  const PF = x => PRECOS.base(f, MULT, x);   // preço de uma linha/extra deste produto
   const pai = categoriaDe(sel.slug);
   document.title = `${nomeFam(sel.slug)} | Grupo WD`;
   const chaves = f.attrs.filter(k => f.vars.some(x => x.a[k]));
@@ -354,15 +411,16 @@ function desenharProduto() {
   }).join('');
   const base = v.q[0][1] / v.q[0][0];
   const tabela = v.q.map(([qt, tot]) => {
-    const u = P(tot) / qt, desc = Math.round((1 - (tot / qt) / base) * 100);
+    const l = precoLinha(sel.slug, tot);
+    const u = l.final / qt, desc = Math.round((1 - (tot / qt) / base) * 100);
     return `<tr class="${qt === sel.qtd ? 'on' : ''}" onclick="escolherQtd(${qt})">
       <td><label><input type="radio" name="qtd" ${qt === sel.qtd ? 'checked' : ''}> ${un(qt)}</label></td>
       <td><small>${brl(u < 0.01 ? 0.01 : u).replace(/(,\d{2})\d*/, '$1')}/un</small>${desc > 0 ? ` <em class="off">-${desc}%</em>` : ''}</td>
-      <td><b>${brl(P(tot))}</b></td></tr>`;
+      <td><b>${htmlPreco(l)}</b></td></tr>`;
   }).join('');
   const ex = (v.x || []).length ? `<div class="opc"><span>Gostaria de adicionar um acabamento extra?</span><div class="extras">${v.x.map(x =>
     `<label class="${sel.extras.has(x[0]) ? 'on' : ''}"><input type="checkbox" ${sel.extras.has(x[0]) ? 'checked' : ''} onchange="toggleExtra(${x[0]}, this.checked)">
-      <span>${esc(x[1])} <small>${x[2] ? `(+ ${x[2]} dia${x[2] > 1 ? 's' : ''})` : ''}</small></span><b>+ ${brl(P(x[3]))}</b></label>`).join('')}</div></div>` : '';
+      <span>${esc(x[1])} <small>${x[2] ? `(+ ${x[2]} dia${x[2] > 1 ? 's' : ''})` : ''}</small></span><b>+ ${brl(PF(x[3]))}</b></label>`).join('')}</div></div>` : '';
   const servicos = `<div class="servicos">${IDX.servicos.map(s => `<label class="serv ${sel.serv.has(s.id) ? 'on' : ''}" style="--cor:${s.cor}">
       <input type="checkbox" ${sel.serv.has(s.id) ? 'checked' : ''} onchange="toggleServ('${s.id}', this.checked)">
       <i>${s.icone}</i><div><b>${esc(s.nome)}</b><span>${brl(P(s.preco))}</span><small>${esc(s.desc)}</small></div></label>`).join('')}</div>`;
@@ -376,7 +434,7 @@ function desenharProduto() {
   $('app').innerHTML = `<div class="wrap prod">
     ${pai ? migalhas(pai, nomeFam(sel.slug)) : ''}
     <div class="prod-grid">
-      <div class="galeria"><img src="${esc(fotoFam(sel.slug))}" alt="${esc(nomeFam(sel.slug))}"></div>
+      <div class="galeria">${pct ? `<span class="tag promo">-${pct}%</span>` : ''}<img src="${esc(fotoFam(sel.slug))}"${attrFoto(sel.slug)} alt="${esc(nomeFam(sel.slug))}"></div>
       <div class="info">
         <h1>${esc(nomeFam(sel.slug))}</h1>
         <p class="sub">${esc(t.sub)}</p>
@@ -396,11 +454,11 @@ function desenharProduto() {
           <button>OK</button></form>
       </div>
     </div>
-    <article class="texto">${t.desc}</article>
+    <article class="texto">${f.desc ? f.desc.split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('') : t.desc}</article>
     ${rel.length ? `<div class="sec-title"><h2>Produtos relacionados</h2></div><div class="grid">${rel.map(s => card(s)).join('')}</div>` : ''}
   </div>
   <div class="buybar"><div class="wrap">
-    <div class="bb-txt"><small>${esc(nomeConfig)}</small><b>${brl(total)}</b>${sel.n > 1 ? `<small>${sel.n} × ${brl(unit)}</small>` : ''}</div>
+    <div class="bb-txt"><small>${esc(nomeConfig)}</small><b>${pct ? `<s>${brl(totalCheio)}</s> ` : ''}${brl(total)}</b>${sel.n > 1 ? `<small>${sel.n} × ${brl(unit)}</small>` : ''}</div>
     <div class="qty"><button onclick="mudarN(-1)">−</button><b>${sel.n}</b><button onclick="mudarN(1)">+</button></div>
     <button class="btn btn-gold" onclick="addCart()">🛒 Adicionar</button>
     <button class="btn btn-wa" onclick="comprarAgora()">💬 Comprar</button>
@@ -435,17 +493,13 @@ function consultarFrete(cep) {
 let cart = [];
 try { cart = JSON.parse(localStorage.getItem('wd-cart2')) || []; } catch (e) {}
 function salvarCart() { try { localStorage.setItem('wd-cart2', JSON.stringify(cart)); } catch (e) {} }
-// recalcula sempre a partir do catálogo (nunca confia em preço salvo)
+// recalcula sempre a partir do catálogo e das regras de preço (nunca confia em preço salvo)
 function itemInfo(it) {
   const f = FAM[it.fam]; if (!f || f instanceof Promise || !visivel(it.fam)) return null;
-  const v = f.vars.find(x => x.q.some(q => q[2] === it.sku)) || f.vars[it.vi];
-  if (!v) return null;
-  const q = v.q.find(x => x[2] === it.sku) || v.q.find(x => x[0] === it.qtd); if (!q) return null;
-  const extras = (v.x || []).filter(x => it.ex.includes(x[0]));
-  const serv = IDX.servicos.filter(s => it.sv.includes(s.id));
-  const unit = Math.round((P(q[1]) + extras.reduce((a, x) => a + P(x[3]), 0) + serv.reduce((a, s) => a + P(s.preco), 0)) * 100) / 100;
-  return { unit, nome: nomeFam(it.fam), img: fotoFam(it.fam),
-    spec: [...Object.values(v.a), ...extras.map(x => '+ ' + x[1]), ...serv.map(s => '+ ' + s.nome)].join(' - ') };
+  const r = PRECOS.item(ctxPreco(it.fam), it);
+  if (!r) return null;
+  return { unit: r.unit, pct: r.pct, nome: nomeFam(it.fam), img: fotoFam(it.fam),
+    spec: [...Object.values(r.v.a), ...r.extras.map(x => '+ ' + x[1]), ...r.serv.map(s => '+ ' + s.nome)].join(' - ') };
 }
 function addCart(silencioso) {
   const { q } = precoSel();
@@ -460,7 +514,7 @@ function comprarAgora() { addCart(true); toggleCart(true); }
 function chg(i, d) { cart[i].n += d; if (cart[i].n < 1) cart.splice(i, 1); salvarCart(); renderCart(); }
 function rm(i) { cart.splice(i, 1); salvarCart(); renderCart(); }
 function clearCart() { if (cart.length && confirm('Esvaziar o carrinho?')) { cart = []; salvarCart(); renderCart(); } }
-function cartTotal() { return Math.round(cart.reduce((s, it) => s + (itemInfo(it)?.unit || 0) * it.n, 0) * 100) / 100; }
+function cartTotal() { return PRECOS.r2(cart.reduce((s, it) => s + (itemInfo(it)?.unit || 0) * it.n, 0)); }
 async function prepararCart() {
   await Promise.all(cart.map(it => R(it.fam) ? famData(it.fam).then(f => { FAM[it.fam] = f; }) : null));
   cart = cart.filter(itemInfo); salvarCart();
@@ -471,8 +525,8 @@ function renderCart() {
   $('count').textContent = validos.reduce((s, i) => s + i.n, 0);
   $('items').innerHTML = validos.length ? cart.map((it, i) => { const x = itemInfo(it); if (!x) return ''; return `
     <div class="item">
-      <img src="${esc(x.img)}" alt="">
-      <div><h4>${num(it.qtd)} un — ${esc(x.nome)}</h4><small>${esc(x.spec)}</small>
+      <img src="${esc(x.img)}"${attrFoto(it.fam)} alt="">
+      <div><h4>${num(it.qtd)} un — ${esc(x.nome)}</h4><small>${esc(x.spec)}</small>${x.pct ? `<small class="promo-txt">Promoção -${x.pct}%</small>` : ''}
         <div class="qty" style="margin-top:6px"><button onclick="chg(${i},-1)">−</button><b>${it.n}</b><button onclick="chg(${i},1)">+</button></div>
         <button class="rm" onclick="rm(${i})">Remover</button></div>
       <b>${brl(x.unit * it.n)}</b>
@@ -481,35 +535,210 @@ function renderCart() {
 }
 function toggleCart(o) { $('drawer').classList.toggle('open', o); $('shade').classList.toggle('open', o); }
 
+/* ---------- CHECKOUT: identificação → dados → pagamento ---------- */
+let cadastro = null, passo = 1, pedidoAtual = null, pararAcompanhar = null;
+const so = s => String(s || '').replace(/\D/g, '');
+function cpfValido(c) {
+  c = so(c); if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+  const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +c[i] * (n + 1 - i); const r = (s * 10) % 11; return r === 10 ? 0 : r; };
+  return dv(9) === +c[9] && dv(10) === +c[10];
+}
+function cnpjValido(c) {
+  c = so(c); if (c.length !== 14 || /^(\d)\1+$/.test(c)) return false;
+  const dv = n => { const p = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const s = p.reduce((a, w, i) => a + w * +c[i], 0) % 11; return s < 2 ? 0 : 11 - s; };
+  return dv(12) === +c[12] && dv(13) === +c[13];
+}
+const fmtDoc = (d, t) => t === 'PJ' ? so(d).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/, '$1.$2.$3/$4-$5') : so(d).replace(/^(\d{3})(\d{3})(\d{3})(\d{2}).*/, '$1.$2.$3-$4');
+const fmtTel = t => so(t).replace(/^(\d{2})(\d{4,5})(\d{4}).*/, '($1) $2-$3');
+const fmtCep = c => so(c).replace(/^(\d{5})(\d{3}).*/, '$1-$2');
+
 async function checkout() {
-  const validos = cart.filter(itemInfo);
-  if (!validos.length) { toast('Seu carrinho está vazio'); return; }
-  if (window.WD?.configurado && !usuario) {
-    if (confirm('Entre com sua conta Google para acompanhar seu pedido em "Meus pedidos".\n\nOK = entrar com Google\nCancelar = enviar só pelo WhatsApp')) { wdEntrar(); return; }
+  if (!cart.filter(itemInfo).length) { toast('Seu carrinho está vazio'); return; }
+  toggleCart(false);
+  $('ovCheck').classList.add('open');
+  if (!usuario) return irPasso(1);
+  await wdPronto;
+  cadastro = await WD.meuCadastro(usuario).catch(() => null);
+  irPasso(cadastro ? 3 : 2);
+}
+function fecharCheckout() {
+  $('ovCheck').classList.remove('open');
+  if (pararAcompanhar) { pararAcompanhar(); pararAcompanhar = null; }
+}
+function resumoCarrinho() {
+  return `<div class="ck-resumo">${cart.filter(itemInfo).map(it => { const x = itemInfo(it);
+    return `<div><span>${it.n}x ${num(it.qtd)} un — ${esc(x.nome)}</span><b>${brl(x.unit * it.n)}</b></div>`; }).join('')}
+    <div class="ck-total"><span>Total</span><b>${brl(cartTotal())}</b></div></div>`;
+}
+function irPasso(p) {
+  passo = p;
+  document.querySelectorAll('#ckPassos li').forEach((li, i) => { li.classList.toggle('on', i + 1 === p); li.classList.toggle('ok', i + 1 < p); });
+  const c = $('ckCorpo');
+  if (p === 1) {
+    c.innerHTML = `<p>Entre com sua conta Google para salvar seus dados e acompanhar o pedido.</p>
+      <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="wdEntrar()">Entrar com Google</button>`;
+  } else if (p === 2) {
+    const d = cadastro || {}, e = d.endereco || {};
+    const tipo = d.tipo || 'PF';
+    c.innerHTML = `<form id="fCad" class="ck-form" onsubmit="event.preventDefault();salvarDados()" novalidate>
+      <div class="ck-tipo">
+        <label><input type="radio" name="tipo" value="PF" ${tipo === 'PF' ? 'checked' : ''} onchange="trocarTipo()"> Pessoa física</label>
+        <label><input type="radio" name="tipo" value="PJ" ${tipo === 'PJ' ? 'checked' : ''} onchange="trocarTipo()"> Pessoa jurídica</label></div>
+      <label class="w"><span id="lNome">${tipo === 'PJ' ? 'Razão social' : 'Nome completo'}</span><input name="nome" value="${esc(d.nome || usuario?.displayName || '')}" required maxlength="150" autocomplete="name"></label>
+      <label><span id="lDoc">${tipo === 'PJ' ? 'CNPJ' : 'CPF'}</span><input name="doc" value="${esc(d.doc ? fmtDoc(d.doc, tipo) : '')}" inputmode="numeric" required oninput="this.value=fmtDoc(this.value, tipoAtual())"></label>
+      <label><span id="lRg">${tipo === 'PJ' ? 'RG do responsável (opcional)' : 'RG'}</span><input name="rg" value="${esc(d.rg || '')}" maxlength="20"></label>
+      <label><span>Telefone / WhatsApp</span><input name="telefone" value="${esc(d.telefone ? fmtTel(d.telefone) : '')}" inputmode="tel" required oninput="this.value=fmtTel(this.value)" autocomplete="tel"></label>
+      <label><span>E-mail</span><input value="${esc(usuario.email)}" disabled></label>
+      <label><span>CEP</span><input name="cep" value="${esc(e.cep ? fmtCep(e.cep) : '')}" inputmode="numeric" required oninput="this.value=fmtCep(this.value);if(so(this.value).length===8)buscarCep(this.value)" autocomplete="postal-code"></label>
+      <label class="w"><span>Endereço</span><input name="logradouro" value="${esc(e.logradouro || '')}" required maxlength="150" autocomplete="address-line1"></label>
+      <label><span>Número</span><input name="numero" value="${esc(e.numero || '')}" required maxlength="20"></label>
+      <label><span>Complemento</span><input name="complemento" value="${esc(e.complemento || '')}" maxlength="80"></label>
+      <label><span>Bairro</span><input name="bairro" value="${esc(e.bairro || '')}" required maxlength="80"></label>
+      <label><span>Cidade</span><input name="cidade" value="${esc(e.cidade || '')}" required maxlength="80"></label>
+      <label><span>UF</span><input name="uf" value="${esc(e.uf || '')}" required maxlength="2" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"></label>
+      <p class="ck-erro" id="ckErro"></p>
+      <p class="ck-lgpd">Usamos seus dados só para produzir, entregar e emitir a documentação do seu pedido. Eles ficam protegidos e só você e a equipe do Grupo WD têm acesso.</p>
+      <button class="btn btn-gold w" style="justify-content:center">Continuar para o pagamento</button>
+    </form>`;
+  } else if (p === 3) {
+    const d = cadastro, e = d.endereco;
+    const online = window.WD?.pagamentoOnline;
+    c.innerHTML = `${resumoCarrinho()}
+      <div class="ck-dados"><b>${esc(d.nome)}</b> · ${d.tipo === 'PJ' ? 'CNPJ' : 'CPF'} ${esc(fmtDoc(d.doc, d.tipo))} · ${esc(fmtTel(d.telefone))}<br>
+        ${esc(e.logradouro)}, ${esc(e.numero)}${e.complemento ? ' - ' + esc(e.complemento) : ''} · ${esc(e.bairro)} · ${esc(e.cidade)}/${esc(e.uf)} · ${esc(fmtCep(e.cep))}
+        <button class="link" onclick="irPasso(2)">Alterar</button></div>
+      <label class="ck-obs"><span>Observações do pedido (opcional)</span><textarea id="ckObs" rows="2" maxlength="1000" placeholder="Ex.: prazo, detalhes da arte, retirada..."></textarea></label>
+      <h4 class="ck-h">Forma de pagamento</h4>
+      <div class="ck-metodos">
+        <button ${online ? '' : 'disabled'} onclick="pagarPix()"><i>⚡</i><b>PIX</b><small>${online ? 'QR Code na hora, aprovação imediata' : 'Em breve'}</small></button>
+        <button ${online ? '' : 'disabled'} onclick="pagarCartao()"><i>💳</i><b>Cartão de crédito ou débito</b><small>${online ? 'Pagamento seguro pelo Mercado Pago' : 'Em breve'}</small></button>
+        <button onclick="pedirWhatsApp()"><i>💬</i><b>Combinar pelo WhatsApp</b><small>Registramos o pedido e você fala com a gente</small></button>
+      </div>
+      <div id="ckPag"></div>`;
   }
-  const nome = $('cName').value.trim() || usuario?.displayName || '', obs = $('cObs').value.trim();
-  const itens = validos.map(it => { const x = itemInfo(it); return {
+}
+const tipoAtual = () => document.querySelector('#fCad [name=tipo]:checked')?.value || 'PF';
+function trocarTipo() {
+  const pj = tipoAtual() === 'PJ', f = $('fCad');
+  $('lNome').textContent = pj ? 'Razão social' : 'Nome completo';
+  $('lDoc').textContent = pj ? 'CNPJ' : 'CPF';
+  $('lRg').textContent = pj ? 'RG do responsável (opcional)' : 'RG';
+  f.doc.value = fmtDoc(f.doc.value, tipoAtual());
+}
+async function buscarCep(cep) {
+  try {
+    const r = await (await fetch(`https://viacep.com.br/ws/${so(cep)}/json/`)).json();
+    if (r.erro) return;
+    const f = $('fCad');
+    if (!f.logradouro.value) f.logradouro.value = r.logradouro || '';
+    if (!f.bairro.value) f.bairro.value = r.bairro || '';
+    f.cidade.value = r.localidade || f.cidade.value; f.uf.value = r.uf || f.uf.value;
+    (f.logradouro.value ? f.numero : f.logradouro).focus();
+  } catch (e) {}
+}
+async function salvarDados() {
+  const f = $('fCad'), tipo = tipoAtual(), erro = m => { $('ckErro').textContent = m; };
+  const cad = {
+    tipo, nome: f.nome.value.trim(), doc: so(f.doc.value), rg: f.rg.value.trim(), telefone: so(f.telefone.value),
+    endereco: { cep: so(f.cep.value), logradouro: f.logradouro.value.trim(), numero: f.numero.value.trim(), complemento: f.complemento.value.trim(),
+      bairro: f.bairro.value.trim(), cidade: f.cidade.value.trim(), uf: f.uf.value.trim().toUpperCase() } };
+  if (cad.nome.length < 3) return erro('Preencha o nome completo.');
+  if (tipo === 'PF' ? !cpfValido(cad.doc) : !cnpjValido(cad.doc)) return erro(tipo === 'PF' ? 'CPF inválido.' : 'CNPJ inválido.');
+  if (tipo === 'PF' && cad.rg.length < 4) return erro('Preencha o RG.');
+  if (cad.telefone.length < 10) return erro('Telefone inválido (com DDD).');
+  const e = cad.endereco;
+  if (e.cep.length !== 8 || !e.logradouro || !e.numero || !e.bairro || !e.cidade || !/^[A-Z]{2}$/.test(e.uf)) return erro('Preencha o endereço completo.');
+  try { await WD.salvarCadastro(usuario, cad); cadastro = cad; irPasso(3); }
+  catch (x) { console.error(x); erro('Não foi possível salvar seus dados. Tente novamente.'); }
+}
+const itensPedido = () => cart.filter(itemInfo).map(it => ({ fam: it.fam, sku: it.sku, vi: it.vi, qtd: it.qtd, ex: it.ex, sv: it.sv, n: it.n }));
+function msgWhats(num6, itens, total, obs) {
+  let m = `Olá, Grupo WD! Fiz o pedido nº ${num6} pelo site:\n\n`;
+  itens.forEach(i => { m += `• ${i.q}x ${i.un} — ${i.nome}\n   ${i.spec}\n   ${brl(i.preco * i.q)}\n`; });
+  m += `\n*Total: ${brl(total)}*\n\nNome: ${cadastro.nome}`;
+  if (obs) m += `\nObs.: ${obs}`;
+  return m;
+}
+async function pedirWhatsApp() {
+  const obs = $('ckObs').value.trim();
+  const itens = cart.filter(itemInfo).map(it => { const x = itemInfo(it); return {
     id: it.sku, fam: it.fam, nome: x.nome, spec: x.spec, un: un(it.qtd), qtd: it.qtd, ex: it.ex, sv: it.sv, q: it.n, preco: x.unit }; });
   const total = cartTotal();
   const win = window.open('', '_blank');
-  let num6 = '';
-  if (usuario) {
-    try { const ref = await WD.criarPedido(usuario, { nome, obs, itens, total }); num6 = ref.id.slice(0, 6).toUpperCase(); }
-    catch (e) { console.error(e); }
-  }
-  let msg = `Olá, Grupo WD! Gostaria de fazer um pedido${num6 ? ' (nº ' + num6 + ')' : ''}:\n\n`;
-  itens.forEach(i => { msg += `• ${i.q}x ${i.un} — ${i.nome}\n   ${i.spec}\n   ${brl(i.preco * i.q)}\n`; });
-  msg += `\n*Total: ${brl(total)}*`;
-  if (nome) msg += `\n\nNome: ${nome}`;
-  if (usuario?.email) msg += `\nE-mail: ${usuario.email}`;
-  if (obs) msg += `\nObs.: ${obs}`;
-  if (win) win.location = waUrl(msg); else location.href = waUrl(msg);
-  if (num6) { cart = []; salvarCart(); renderCart(); toggleCart(false); toast('Pedido ' + num6 + ' registrado ✔'); }
+  try {
+    const ref = await WD.criarPedido(usuario, { nome: cadastro.nome, obs, itens, total, cliente: await WD.meuCadastro(usuario) });
+    const num6 = ref.id.slice(0, 6).toUpperCase();
+    if (win) win.location = waUrl(msgWhats(num6, itens, total, obs)); else location.href = waUrl(msgWhats(num6, itens, total, obs));
+    concluir(ref.id, num6, 'Pedido registrado! Continue a conversa no WhatsApp para combinar o pagamento.');
+  } catch (e) { console.error(e); win?.close(); toast('Não foi possível registrar o pedido. Tente novamente.'); }
+}
+async function pagarPix() {
+  $('ckPag').innerHTML = '<p class="muted">Gerando o PIX…</p>';
+  try {
+    const r = await WD.pagar({ itens: itensPedido(), obs: $('ckObs').value.trim(), metodo: 'pix' });
+    $('ckPag').innerHTML = `<div class="pix">
+      <h4>Pague com PIX — ${brl(r.total)}</h4>
+      ${r.qrBase64 ? `<img src="data:image/png;base64,${esc(r.qrBase64)}" alt="QR Code PIX">` : ''}
+      <label><span>PIX copia e cola</span><textarea readonly rows="3" id="pixCod">${esc(r.copiaCola || '')}</textarea></label>
+      <button class="btn btn-gold" onclick="navigator.clipboard.writeText($('pixCod').value);toast('Código copiado ✔')">Copiar código</button>
+      <p class="muted">Pedido nº ${esc(r.pedidoId.slice(0, 6).toUpperCase())}. Assim que o pagamento for confirmado, esta tela atualiza sozinha.</p></div>`;
+    acompanhar(r.pedidoId);
+  } catch (e) { console.error(e); $('ckPag').innerHTML = `<p class="ck-erro">${esc(e.message || 'Não foi possível gerar o PIX.')} Você pode combinar pelo WhatsApp.</p>`; }
+}
+let mpCarregado = null;
+async function pagarCartao() {
+  $('ckPag').innerHTML = '<div id="mpCartao"></div><p class="muted" id="mpMsg">Carregando pagamento seguro…</p>';
+  mpCarregado = mpCarregado || new Promise((ok, erro) => { const s = document.createElement('script'); s.src = 'https://sdk.mercadopago.com/js/v2'; s.onload = ok; s.onerror = erro; document.head.appendChild(s); });
+  try {
+    await mpCarregado;
+    const mp = new MercadoPago(WD.MP_PUBLIC_KEY, { locale: 'pt-BR' });
+    await mp.bricks().create('cardPayment', 'mpCartao', {
+      initialization: { amount: cartTotal(), payer: { email: usuario.email, identification: { type: cadastro.tipo === 'PJ' ? 'CNPJ' : 'CPF', number: cadastro.doc } } },
+      customization: { paymentMethods: { types: { included: ['credit_card', 'debit_card'] }, maxInstallments: 12 } },
+      callbacks: {
+        onReady: () => { $('mpMsg').textContent = 'Os dados do cartão vão direto para o Mercado Pago, com segurança — não ficam no nosso site.'; },
+        onSubmit: async dados => {
+          const r = await WD.pagar({ itens: itensPedido(), obs: $('ckObs').value.trim(), metodo: 'cartao', cartao: dados });
+          if (r.status === 'aprovado') concluir(r.pedidoId, r.pedidoId.slice(0, 6).toUpperCase(), 'Pagamento aprovado! Seu pedido já está com a nossa equipe.');
+          else if (r.status === 'pendente') { $('mpMsg').textContent = 'Pagamento em análise. Avisaremos quando for aprovado.'; acompanhar(r.pedidoId); }
+          else throw new Error('Pagamento recusado. Confira os dados ou tente outro cartão.');
+        },
+        onError: e => { console.error(e); $('mpMsg').textContent = 'Não foi possível processar o cartão.'; },
+      },
+    });
+  } catch (e) { console.error(e); $('ckPag').innerHTML = '<p class="ck-erro">O pagamento com cartão está indisponível agora. Tente o PIX ou combine pelo WhatsApp.</p>'; }
+}
+function acompanhar(id) {
+  if (pararAcompanhar) pararAcompanhar();
+  pararAcompanhar = WD.acompanharPedido(id, p => {
+    if (p?.pagamento?.status === 'aprovado') concluir(id, id.slice(0, 6).toUpperCase(), 'Pagamento confirmado! Seu pedido já está com a nossa equipe.');
+  });
+}
+function concluir(id, num6, texto) {
+  if (pararAcompanhar) { pararAcompanhar(); pararAcompanhar = null; }
+  pedidoAtual = id;
+  cart = []; salvarCart(); renderCart();
+  document.querySelectorAll('#ckPassos li').forEach(li => { li.classList.remove('on'); li.classList.add('ok'); });
+  const arte = window.WD?.UPLOAD_ARTE;
+  $('ckCorpo').innerHTML = `<div class="ck-ok"><div class="ck-check">✔</div><h3>Pedido nº ${esc(num6)}</h3><p>${esc(texto)}</p>
+    ${arte ? `<label class="ck-arte"><span>Envie o arquivo da arte (PDF, AI, CDR, PNG ou JPG — até 60 MB)</span><input type="file" id="arqArte" onchange="enviarArte(this.files[0])"><small id="arteMsg"></small></label>`
+      : `<p class="muted">Tem o arquivo da arte? Envie pelo WhatsApp informando o nº do pedido.</p>`}
+    <div class="ck-acoes"><a class="btn btn-wa" target="_blank" rel="noopener" href="${waUrl(`Olá, Grupo WD! Sobre o pedido nº ${num6}:`)}">💬 Falar no WhatsApp</a>
+    <button class="btn btn-light" onclick="fecharCheckout();abrirMeusPedidos()">Ver meus pedidos</button></div></div>`;
+}
+async function enviarArte(arq) {
+  if (!arq) return;
+  if (arq.size > 60 * 1024 * 1024) { $('arteMsg').textContent = 'Arquivo maior que 60 MB. Envie pelo WhatsApp.'; return; }
+  try {
+    await WD.enviarArte(usuario, pedidoAtual, arq, p => { $('arteMsg').textContent = `Enviando… ${Math.round(p * 100)}%`; });
+    $('arteMsg').textContent = 'Arte enviada ✔';
+  } catch (e) { console.error(e); $('arteMsg').textContent = 'Não foi possível enviar. Mande pelo WhatsApp.'; }
 }
 
 /* ---------- CONTA (Google) ---------- */
 let usuario = null;
-function wdEntrar() { if (window.WD) WD.entrar().catch(e => alert('Não foi possível entrar: ' + e.message)); else alert('Carregando, tente novamente em instantes.'); }
+function wdEntrar() { wdPronto.then(() => WD.entrar()).catch(e => alert('Não foi possível entrar: ' + e.message)); }
 function wdSair() { $('menu').classList.remove('open'); window.WD?.sair(); }
 function setUsuario(u, admin) {
   usuario = u;
@@ -519,11 +748,15 @@ function setUsuario(u, admin) {
     $('avatar').src = u.photoURL || 'img/icon-192.png';
     $('uNome').textContent = u.displayName || 'Cliente';
     $('uEmail').textContent = u.email || '';
-    if (!$('cName').value) $('cName').value = u.displayName || '';
   }
   $('lnkAdmin').style.display = admin ? 'block' : 'none';
+  // login feito durante o checkout: segue para os dados
+  if (u && $('ovCheck').classList.contains('open') && passo === 1) checkout();
 }
-const STATUS = { novo: 'Recebido', producao: 'Em produção', pronto: 'Pronto / enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+const STATUS = { aguardando_pagamento: 'Aguardando pagamento', arte_analise: 'Arte em análise', producao: 'Em produção',
+  pronto: 'Pronto para envio/retirada', finalizado: 'Finalizado', cancelado: 'Cancelado',
+  novo: 'Aguardando pagamento', entregue: 'Finalizado' };
+const PAGTO = { pix: 'PIX', cartao: 'Cartão', whatsapp: 'Combinar pelo WhatsApp' };
 async function abrirMeusPedidos() {
   $('menu').classList.remove('open'); $('ovPed').classList.add('open');
   $('listaPed').innerHTML = '<p style="color:var(--muted)">Carregando...</p>';
@@ -531,7 +764,8 @@ async function abrirMeusPedidos() {
     const l = await WD.meusPedidos(usuario);
     $('listaPed').innerHTML = l.length ? l.map(p => `<div class="ped">
       <div style="display:flex;justify-content:space-between;gap:8px"><b>Pedido ${esc(p.id.slice(0, 6).toUpperCase())}</b><span class="st st-${esc(p.status)}">${esc(STATUS[p.status] || p.status)}</span></div>
-      <div style="color:var(--muted);margin:4px 0">${p.criadoEm ? new Date(p.criadoEm.seconds * 1000).toLocaleString('pt-BR') : ''}</div>
+      <div style="color:var(--muted);margin:4px 0">${p.criadoEm ? new Date(p.criadoEm.seconds * 1000).toLocaleString('pt-BR') : ''}
+        ${p.pagamento ? ` · ${esc(PAGTO[p.pagamento.metodo] || p.pagamento.metodo)}${p.pagamento.status === 'aprovado' ? ' (pago)' : ''}` : ''}</div>
       ${(p.itens || []).map(i => `<div>${esc(i.q)}x ${esc(i.un || '')} — ${esc(i.nome)}</div>`).join('')}
       <div style="font-weight:800;margin-top:6px">${brl(p.total)}</div></div>`).join('') : '<p style="color:var(--muted)">Você ainda não fez pedidos.</p>';
   } catch (e) { $('listaPed').innerHTML = '<p>Erro ao carregar pedidos.</p>'; console.error(e); }
@@ -540,7 +774,7 @@ document.addEventListener('click', e => { if (!e.target.closest('#acct')) $('men
 
 /* ---------- utilidades ---------- */
 let tt; function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 1800); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { toggleCart(false); fecharMenu(); $('ovPed').classList.remove('open'); $('filtros')?.classList.remove('open'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { toggleCart(false); fecharCheckout(); fecharMenu(); $('ovPed').classList.remove('open'); $('filtros')?.classList.remove('open'); } });
 function doSearch(e) {
   e?.preventDefault();
   const t = $('q').value.trim();
@@ -557,6 +791,6 @@ function installApp() { if (installEvt) { installEvt.prompt(); installEvt = null
 /* ---------- início ---------- */
 ['waTop', 'waFloat'].forEach(id => $(id).href = waUrl('Olá, Grupo WD! Gostaria de um orçamento.'));
 $('year').textContent = new Date().getFullYear();
-carregarIndice().then(async () => { montarMenu(); render(); await prepararCart(); renderCart(); })
+Promise.all([carregarIndice(), carregarAjustes()]).then(async () => { aplicarAjustes(); montarMenu(); render(); await prepararCart(); renderCart(); })
   .catch(e => { $('app').innerHTML = '<div class="wrap empty">Não foi possível carregar o catálogo. Tente novamente.</div>'; console.error(e); });
-window.setAjustes = a => { AJUSTES = a || {}; if (IDX) { montarMenu(); render(); renderCart(); } };
+

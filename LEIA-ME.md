@@ -4,7 +4,7 @@ Site + app (instalável no celular e no computador) com catálogo, carrinho,
 pedido pelo WhatsApp, login com Google e painel administrativo.
 
 - **Site no ar:** https://wd-grafica-rapida.web.app (e https://wdgraficarapida.com.br quando o DNS estiver ok)
-- **Painel ADM:** `/admin.html` — só entra **grupowdoficial@gmail.com**
+- **Painel ADM:** `/admin.html` — acessam **wdgraficarapidacv@gmail.com** e **grupowdoficial@gmail.com**
 - **Projeto Firebase:** `wd-grafica-rapida` (console: https://console.firebase.google.com/project/wd-grafica-rapida)
 
 ## Arquivos
@@ -12,7 +12,10 @@ pedido pelo WhatsApp, login com Google e painel administrativo.
 | Arquivo | O que é |
 |---|---|
 | `index.html` | Loja (catálogo, carrinho, login do cliente, "Meus pedidos") |
-| `admin.html` | Painel ADM (pedidos, produtos, clientes) |
+| `admin.html` | Painel ADM (pedidos, clientes, produtos, configurações) |
+| `js/precos.js` | Regras de preço (site, painel e servidor) |
+| `functions/` | Servidor de pagamento (Mercado Pago) |
+| `storage.rules` | Segurança dos arquivos de arte |
 | `js/produtos.js` | Catálogo padrão e o **MULTIPLICADOR = 2.5** (preço final = revenda × 2,5) |
 | `js/firebase-config.js` | Configuração do app web do Firebase (valores públicos) |
 | `js/wd-firebase.js` | Login Google e acesso ao banco |
@@ -65,15 +68,53 @@ em `img/fam/<produto>.webp` (sem a marca de terceiros).
 ## Publicar alterações
 
 ```bash
-npx firebase-tools deploy
+npx firebase-tools deploy --only hosting,firestore
 ```
 
-## Primeiro acesso ao painel
+(Depois de ativar o pagamento online, use `npx firebase-tools deploy`.)
 
-Abra `/admin.html`, entre com grupowdoficial@gmail.com. Os produtos já estão no banco: edite o
-preço de revenda e o site mostra × 2,5 automaticamente.
+## Painel administrativo
 
-## Status dos pedidos
+- **Pedidos:** do mais recente para o mais antigo, com produtos, quantidades, valores, forma de pagamento,
+  arte enviada e a ficha do cliente (CPF/CNPJ, RG, telefone, endereço). Botões de WhatsApp e ligação.
+  Status: Aguardando pagamento → Arte em análise → Em produção → Pronto para envio/retirada → Finalizado (ou Cancelado).
+  Em pedidos "combinar pelo WhatsApp", você marca o pagamento como pago manualmente.
+- **Clientes:** busca por nome, CPF, CNPJ, telefone ou e-mail; histórico de compras de cada cliente.
+- **Produtos:** criar, editar (nome, descrição, foto, categorias, combinações, quantidades e preços),
+  promoção com % e data de validade, reajuste em lote, ocultar, excluir e restaurar o original do catálogo.
+- **Configurações:** multiplicador dos preços do catálogo (padrão 2,5).
 
-Recebido → Em produção → Pronto / enviado → Entregue (ou Cancelado).
-O cliente acompanha em **Minha conta → Meus pedidos**.
+## Compra no site
+
+1. Cliente entra com Google.
+2. Preenche o cadastro (PF ou PJ, CPF/CNPJ validado, RG, telefone e endereço — o CEP preenche o endereço).
+3. Escolhe a forma de pagamento: **PIX**, **cartão de crédito/débito** (quando ativados) ou **combinar pelo WhatsApp**.
+
+As regras de preço ficam em `js/precos.js` e são as mesmas no site, no painel e no servidor de pagamento:
+o servidor recalcula tudo antes de cobrar, então ninguém consegue pagar menos alterando o navegador.
+
+## Ativar PIX, cartão e envio de arte (Mercado Pago)
+
+O pagamento online precisa de um pequeno servidor (Firebase Functions) e do Storage para os arquivos de arte.
+Os dois exigem o plano **Blaze** do Firebase (paga só o que usar; para uma loja deste porte costuma ficar
+dentro da cota gratuita ou em poucos reais por mês).
+
+1. **Plano Blaze:** https://console.firebase.google.com/project/wd-grafica-rapida/usage/details → *Modificar plano*.
+2. **Storage:** Console → *Storage* → *Começar* → região `southamerica-east1`.
+3. **Mercado Pago:** https://www.mercadopago.com.br/developers/panel/app → *Criar aplicação* (pagamentos online,
+   checkout transparente). Em *Credenciais de produção* copie a **Public Key** e o **Access Token**.
+4. **Guardar o Access Token como segredo** (ele nunca vai para o site). No terminal, na pasta do projeto:
+   ```bash
+   npx firebase-tools functions:secrets:set MP_ACCESS_TOKEN
+   ```
+5. **Webhook:** no painel do Mercado Pago → sua aplicação → *Webhooks* → *Configurar notificações*:
+   URL `https://southamerica-east1-wd-grafica-rapida.cloudfunctions.net/mpWebhook`, evento **Pagamentos**.
+   Copie a **assinatura secreta** e grave:
+   ```bash
+   npx firebase-tools functions:secrets:set MP_WEBHOOK_SECRET
+   ```
+6. Em `js/firebase-config.js`: `PAGAMENTO_ONLINE = true`, `MP_PUBLIC_KEY = "sua Public Key"` e `UPLOAD_ARTE = true`.
+7. Publicar tudo:
+   ```bash
+   npx firebase-tools deploy
+   ```

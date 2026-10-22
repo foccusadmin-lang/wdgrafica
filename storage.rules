@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function admin() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email in ['wdgraficarapidacv@gmail.com', 'grupowdoficial@gmail.com'];
+    }
+    // Arquivo da arte: o cliente envia para a pasta do próprio pedido; só ele e o ADM leem.
+    match /artes/{uid}/{pedido}/{arquivo} {
+      allow read: if admin() || (request.auth != null && request.auth.uid == uid);
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 60 * 1024 * 1024
+        && (request.resource.contentType.matches('application/(pdf|postscript|illustrator|zip|x-zip-compressed|octet-stream|vnd.adobe.*|x-cdr|cdr|coreldraw)')
+            || request.resource.contentType.matches('image/.*'));
+      allow delete: if admin();
+    }
+    match /{tudo=**} { allow read, write: if false; }
+  }
+}

@@ -7,49 +7,121 @@ service cloud.firestore {
     function emailVerificado() {
       return logado() && request.auth.token.email != null && request.auth.token.email_verified == true;
     }
-    // Único administrador do painel.
+    // Administradores do painel.
     function admin() {
-      return emailVerificado() && request.auth.token.email == 'grupowdoficial@gmail.com';
+      return emailVerificado()
+        && request.auth.token.email in ['wdgraficarapidacv@gmail.com', 'grupowdoficial@gmail.com'];
     }
     function texto(v, max) { return v is string && v.size() <= max; }
     function novos() { return request.resource.data; }
+    function mudou() { return novos().diff(resource.data).affectedKeys(); }
+    function digitos(v, n) { return v is string && v.matches('^[0-9]{' + string(n) + '}$'); }
+
+    // ---------- configuração da loja (multiplicador de preço) ----------
+    match /config/loja {
+      allow read: if true;
+      allow write: if admin()
+        && novos().keys().hasOnly(['mult'])
+        && novos().mult is number && novos().mult >= 1 && novos().mult <= 10;
+    }
 
     // ---------- ajustes do catálogo ----------
-    // O catálogo e os preços ficam no site (data/catalogo.json). Aqui o ADM só oculta, renomeia ou destaca produtos.
+    // Ocultar, renomear, destacar, promoção, produtos novos/excluídos e resumo para a vitrine.
     match /ajustes/{slug} {
       allow read: if true;
       allow delete: if admin();
       allow create, update: if admin()
         && slug.matches('^[a-z0-9-]{1,100}$')
-        && novos().keys().hasOnly(['ativo', 'destaque', 'nome'])
-        && novos().ativo is bool
-        && novos().destaque is bool
-        && texto(novos().nome, 120);
+        && novos().keys().hasOnly(['ativo', 'destaque', 'nome', 'promo', 'novo', 'excluido', 'editado', 'deps', 'resumo', 'foto'])
+        && novos().get('ativo', true) is bool
+        && novos().get('destaque', false) is bool
+        && texto(novos().get('nome', ''), 120)
+        && (!('promo' in novos()) || (novos().promo is map
+             && novos().promo.keys().hasOnly(['pct', 'ate'])
+             && novos().promo.pct is number && novos().promo.pct >= 0 && novos().promo.pct < 100))
+        && (!('deps' in novos()) || (novos().deps is list && novos().deps.size() <= 30))
+        && (!('resumo' in novos()) || novos().resumo is map)
+        && (!('foto' in novos()) || novos().foto is number);
+    }
+
+    // ---------- produtos criados/editados no painel (preços finais) ----------
+    match /produtos/{slug} {
+      allow read: if true;
+      allow delete: if admin();
+      allow create, update: if admin()
+        && slug.matches('^[a-z0-9-]{1,100}$')
+        && novos().keys().hasOnly(['nome', 'desc', 'attrs', 'varsJson', 'atualizadoEm'])
+        && texto(novos().nome, 120) && novos().nome.size() > 0
+        && texto(novos().desc, 5000)
+        && novos().attrs is list && novos().attrs.size() <= 10
+        && texto(novos().varsJson, 900000)
+        && novos().atualizadoEm == request.time;
+    }
+
+    // ---------- fotos dos produtos (imagem compactada) ----------
+    match /fotos/{slug} {
+      allow read: if true;
+      allow delete: if admin();
+      allow create, update: if admin()
+        && novos().keys().hasOnly(['img'])
+        && novos().img is string && novos().img.size() < 700000
+        && novos().img.matches('^data:image/(webp|jpeg|png);base64,.*');
     }
 
     // ---------- clientes ----------
-    // Cada cliente só cria/atualiza o próprio cadastro (dados vindos da conta Google).
     match /clientes/{uid} {
-      allow read: if admin() || (logado() && request.auth.uid == uid);
-      allow create, update: if logado() && request.auth.uid == uid
-        && novos().keys().hasOnly(['nome', 'email', 'foto', 'ultimoLogin'])
-        && novos().email == request.auth.token.email
-        && texto(novos().nome, 120)
-        && texto(novos().foto, 500)
-        && novos().ultimoLogin == request.time;
+      function dono() { return logado() && request.auth.uid == uid; }
+      function loginOk() {
+        return novos().email == request.auth.token.email
+          && texto(novos().nome, 120) && texto(novos().foto, 500)
+          && novos().ultimoLogin == request.time;
+      }
+      function enderecoOk(e) {
+        return e is map
+          && e.keys().hasOnly(['cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'uf'])
+          && digitos(e.cep, 8)
+          && texto(e.logradouro, 150) && e.logradouro.size() > 0
+          && texto(e.numero, 20) && e.numero.size() > 0
+          && texto(e.get('complemento', ''), 80)
+          && texto(e.bairro, 80) && e.bairro.size() > 0
+          && texto(e.cidade, 80) && e.cidade.size() > 0
+          && e.uf is string && e.uf.matches('^[A-Z]{2}$');
+      }
+      function cadastroOk(c) {
+        return c is map
+          && c.keys().hasOnly(['tipo', 'nome', 'doc', 'rg', 'telefone', 'endereco', 'atualizadoEm'])
+          && ((c.tipo == 'PF' && digitos(c.doc, 11)) || (c.tipo == 'PJ' && digitos(c.doc, 14)))
+          && texto(c.nome, 150) && c.nome.size() >= 3
+          && texto(c.rg, 20)
+          && c.telefone is string && c.telefone.matches('^[0-9]{10,11}$')
+          && enderecoOk(c.endereco)
+          && c.atualizadoEm == request.time;
+      }
+      allow read: if admin() || dono();
+      allow create: if dono()
+        && novos().keys().hasOnly(['nome', 'email', 'foto', 'ultimoLogin']) && loginOk();
+      allow update: if dono() && (
+        (mudou().hasOnly(['nome', 'email', 'foto', 'ultimoLogin']) && loginOk())
+        || (mudou().hasOnly(['cadastro']) && cadastroOk(novos().cadastro)));
       allow delete: if admin();
     }
 
     // ---------- pedidos ----------
     match /pedidos/{id} {
-      // Cliente logado cria pedido em nome próprio, sempre com status "novo".
+      function cadastroDoCliente() {
+        return get(/databases/$(database)/documents/clientes/$(request.auth.uid)).data.cadastro;
+      }
+      // Pedido "combinar pelo WhatsApp": criado pelo cliente, sempre aguardando pagamento.
+      // Pedidos com pagamento online são criados só pelo servidor (que recalcula os preços).
       allow create: if emailVerificado()
-        && novos().keys().hasOnly(['uid', 'email', 'nome', 'obs', 'itens', 'total', 'status', 'criadoEm'])
+        && novos().keys().hasOnly(['uid', 'email', 'nome', 'obs', 'itens', 'total', 'status', 'pagamento', 'cliente', 'criadoEm'])
         && novos().uid == request.auth.uid
         && novos().email == request.auth.token.email
-        && novos().status == 'novo'
+        && novos().status == 'aguardando_pagamento'
+        && novos().pagamento == {'metodo': 'whatsapp', 'status': 'pendente'}
+        && novos().cliente == cadastroDoCliente()
         && novos().criadoEm == request.time
-        && texto(novos().nome, 120)
+        && texto(novos().nome, 150)
         && texto(novos().obs, 1000)
         && novos().itens is list && novos().itens.size() > 0 && novos().itens.size() <= 50
         && novos().total is number && novos().total > 0 && novos().total < 1000000;
@@ -57,10 +129,20 @@ service cloud.firestore {
       // Cliente vê só os próprios pedidos; ADM vê todos.
       allow read: if admin() || (logado() && resource.data.uid == request.auth.uid);
 
-      // Só o ADM muda pedidos, e apenas o status.
-      allow update: if admin()
-        && novos().diff(resource.data).affectedKeys().hasOnly(['status'])
-        && novos().status in ['novo', 'producao', 'pronto', 'entregue', 'cancelado'];
+      allow update: if
+        // ADM: muda o status e (pedidos via WhatsApp) marca o pagamento manualmente
+        (admin()
+          && mudou().hasOnly(['status', 'pagamento'])
+          && novos().status in ['aguardando_pagamento', 'arte_analise', 'producao', 'pronto', 'finalizado', 'cancelado']
+          && ((!('pagamento' in resource.data) && !('pagamento' in novos()))   // pedidos antigos
+            || (novos().pagamento.diff(resource.data.pagamento).affectedKeys().hasOnly(['status'])
+              && novos().pagamento.status in ['pendente', 'aprovado', 'recusado', 'estornado'])))
+        // Cliente: anexa o arquivo da arte ao próprio pedido
+        || (logado() && resource.data.uid == request.auth.uid
+          && mudou().hasOnly(['arte'])
+          && novos().arte.keys().hasOnly(['nome', 'caminho', 'tamanho'])
+          && novos().arte.caminho.matches('^artes/' + request.auth.uid + '/' + id + '/.*')
+          && texto(novos().arte.nome, 120));
       allow delete: if admin();
     }
 
