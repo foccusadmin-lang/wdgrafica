@@ -1,5 +1,5 @@
 // Service worker: deixa o site instalável como app e funcionando offline.
-const CACHE = 'grupowd-v10';
+const CACHE = 'grupowd-v13';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'js/loja.js', 'js/precos.js', 'js/textos.js', 'data/indice.json', 'img/sem-foto.webp', 'img/logo.jpg', 'img/icon-192.png', 'img/icon-512.png'];
 
 self.addEventListener('install', e => {
